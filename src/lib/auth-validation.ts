@@ -62,6 +62,7 @@ export type AuthFieldConfig = {
   autoComplete: "email" | "current-password" | "name" | "new-password" | "one-time-code" | "off";
   keyboardType?: "email-address" | "number-pad" | "default";
   maxLength?: number;
+  action?: AuthLinkConfig;
 };
 
 export type AuthLinkConfig = {
@@ -105,13 +106,10 @@ export const authFormConfig: Record<AuthFlow, AuthFormConfig> = {
         type: "password",
         autoComplete: "current-password",
         maxLength: 1024,
+        action: { href: "/auth/password/forgot", label: "Quên mật khẩu?" },
       },
     ],
-    links: [
-      { href: "/auth/password/forgot", label: "Quên mật khẩu?" },
-      { href: "/auth/register", label: "Tạo tài khoản" },
-      { href: "/auth/email/verify", label: "Xác minh email" },
-    ],
+    links: [{ href: "/auth/register", label: "Tạo tài khoản" }],
   },
   register: {
     title: "Tạo tài khoản",
@@ -144,21 +142,13 @@ export const authFormConfig: Record<AuthFlow, AuthFormConfig> = {
         maxLength: 128,
       },
     ],
-    links: [{ href: "/auth", label: "Đã có tài khoản? Đăng nhập" }],
+    links: [],
   },
   verifyEmail: {
     title: "Xác minh email",
-    description: "Nhập email và mã xác minh gồm 6 chữ số.",
+    description: "Nhập mã xác minh gồm 6 chữ số đã gửi đến email của bạn.",
     submitLabel: "Xác minh email",
     fields: [
-      {
-        name: "email",
-        label: "Email",
-        placeholder: "ban@example.com",
-        type: "email",
-        autoComplete: "email",
-        keyboardType: "email-address",
-      },
       {
         name: "code",
         label: "Mã xác minh",
@@ -169,7 +159,7 @@ export const authFormConfig: Record<AuthFlow, AuthFormConfig> = {
         maxLength: 6,
       },
     ],
-    links: [{ href: "/auth", label: "Quay lại đăng nhập" }],
+    links: [],
   },
   forgotPassword: {
     title: "Quên mật khẩu",
@@ -186,10 +176,7 @@ export const authFormConfig: Record<AuthFlow, AuthFormConfig> = {
         maxLength: 254,
       },
     ],
-    links: [
-      { href: "/auth/password/reset", label: "Tôi đã có mã đặt lại" },
-      { href: "/auth", label: "Quay lại đăng nhập" },
-    ],
+    links: [],
   },
   resetPassword: {
     title: "Đặt lại mật khẩu",
@@ -214,7 +201,7 @@ export const authFormConfig: Record<AuthFlow, AuthFormConfig> = {
         maxLength: 128,
       },
     ],
-    links: [{ href: "/auth", label: "Quay lại đăng nhập" }],
+    links: [],
   },
   changePassword: {
     title: "Đổi mật khẩu",

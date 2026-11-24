@@ -2,9 +2,10 @@ import { AuthField } from "@/components/auth/AuthField";
 import { AuthFormShell } from "@/components/auth/AuthFormShell";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
+import { useAuthFlow } from "@/components/auth/AuthFlowProvider";
 import { authFormConfig, authSchemas, type AuthFlow } from "@/lib/auth-validation";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 
 type AuthFormProps = {
@@ -18,9 +19,17 @@ function createInitialValues(flow: AuthFlow): Record<string, string> {
 export function AuthForm({ flow }: AuthFormProps) {
   const config = authFormConfig[flow];
   const router = useRouter();
+  const { pendingVerificationEmail, setPendingVerificationEmail } = useAuthFlow();
+  const hasPendingVerificationEmailOnEntry = useRef(Boolean(pendingVerificationEmail));
   const [values, setValues] = useState<Record<string, string>>(() => createInitialValues(flow));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    if (flow === "verifyEmail" && !hasPendingVerificationEmailOnEntry.current) {
+      router.replace("/auth/register");
+    }
+  }, [flow, router]);
 
   function updateField(name: string, value: string) {
     setValues((current) => ({ ...current, [name]: value }));
@@ -34,7 +43,16 @@ export function AuthForm({ flow }: AuthFormProps) {
   }
 
   function handleSubmit() {
-    const result = authSchemas[flow].safeParse(values);
+    if (flow === "verifyEmail" && !pendingVerificationEmail) {
+      router.replace("/auth/register");
+      return;
+    }
+
+    const valuesToValidate =
+      flow === "verifyEmail"
+        ? { ...values, email: pendingVerificationEmail ?? "" }
+        : values;
+    const result = authSchemas[flow].safeParse(valuesToValidate);
 
     if (!result.success) {
       const nextErrors: Record<string, string> = {};
@@ -50,7 +68,26 @@ export function AuthForm({ flow }: AuthFormProps) {
     }
 
     setErrors({});
-    setNotice("Thông tin hợp lệ. Kết nối API xác thực chưa được triển khai.");
+    setNotice("");
+
+    switch (flow) {
+      case "register":
+        setPendingVerificationEmail(values.email);
+        router.push("/auth/email/verify");
+        return;
+      case "verifyEmail":
+        setPendingVerificationEmail(null);
+        router.replace("/auth");
+        return;
+      case "forgotPassword":
+        router.push("/auth/password/reset");
+        return;
+      case "resetPassword":
+        router.replace("/auth");
+        return;
+      default:
+        setNotice("Thông tin hợp lệ. Kết nối API xác thực chưa được triển khai.");
+    }
   }
 
   return (
@@ -89,7 +126,7 @@ export function AuthForm({ flow }: AuthFormProps) {
             <Pressable
               key={link.href}
               accessibilityRole="link"
-              onPress={() => router.push(link.href === "/auth" ? "/auth/index" : link.href)}
+              onPress={() => router.push(link.href)}
             >
               <Text className="text-sm font-semibold text-[#264673] underline">{link.label}</Text>
             </Pressable>

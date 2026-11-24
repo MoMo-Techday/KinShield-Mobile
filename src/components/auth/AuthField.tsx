@@ -1,7 +1,8 @@
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import type { AuthFieldConfig } from "@/lib/auth-validation";
-import { View } from "react-native";
+import { useRouter } from "expo-router";
+import { Pressable, View } from "react-native";
 
 type AuthFieldProps = {
   field: AuthFieldConfig;
@@ -11,13 +12,27 @@ type AuthFieldProps = {
 };
 
 export function AuthField({ field, value, error, onChange }: AuthFieldProps) {
+  const router = useRouter();
   const inputId = `auth-${field.name}`;
+  const action = field.action;
 
   return (
     <View className="gap-2">
-      <Text nativeID={`${inputId}-label`} className="text-sm font-semibold text-[#1e2229]">
-        {field.label}
-      </Text>
+      <View className="flex-row items-center justify-between">
+        <Text nativeID={`${inputId}-label`} className="text-sm font-semibold text-[#1e2229]">
+          {field.label}
+        </Text>
+        {action ? (
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => router.push(action.href)}
+          >
+            <Text className="text-xs font-medium text-[#777d86] active:text-[#264673]">
+              {action.label}
+            </Text>
+          </Pressable>
+        ) : null}
+      </View>
       <Input
         nativeID={inputId}
         value={value}
