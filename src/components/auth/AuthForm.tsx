@@ -7,9 +7,26 @@ import { authFormConfig, authSchemas, type AuthFlow } from "@/lib/auth-validatio
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
+import {
+  useChangePassword,
+  useForgotPassword,
+  useLogin,
+  useRegister,
+  useResetPassword,
+  useVerifyEmail,
+} from "@/hooks/use-auth";
 
 type AuthFormProps = {
   flow: AuthFlow;
+};
+
+const pendingLabels: Record<AuthFlow, string> = {
+  login: "Đang đăng nhập...",
+  register: "Đang tạo tài khoản...",
+  verifyEmail: "Đang xác minh...",
+  forgotPassword: "Đang gửi yêu cầu...",
+  resetPassword: "Đang đặt lại mật khẩu...",
+  changePassword: "Đang cập nhật...",
 };
 
 function createInitialValues(flow: AuthFlow): Record<string, string> {
@@ -24,6 +41,20 @@ export function AuthForm({ flow }: AuthFormProps) {
   const [values, setValues] = useState<Record<string, string>>(() => createInitialValues(flow));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState("");
+  const loginMutation = useLogin();
+  const registerMutation = useRegister();
+  const verifyEmailMutation = useVerifyEmail();
+  const forgotPasswordMutation = useForgotPassword();
+  const resetPasswordMutation = useResetPassword();
+  const changePasswordMutation = useChangePassword();
+  const isPending = {
+    login: loginMutation.isPending,
+    register: registerMutation.isPending,
+    verifyEmail: verifyEmailMutation.isPending,
+    forgotPassword: forgotPasswordMutation.isPending,
+    resetPassword: resetPasswordMutation.isPending,
+    changePassword: changePasswordMutation.isPending,
+  }[flow];
 
   useEffect(() => {
     if (flow === "verifyEmail" && !hasPendingVerificationEmailOnEntry.current) {
@@ -71,22 +102,56 @@ export function AuthForm({ flow }: AuthFormProps) {
     setNotice("");
 
     switch (flow) {
+      case "login":
+        loginMutation.mutate(
+          { email: values.email, password: values.password },
+          { onSuccess: () => setNotice("Đăng nhập thành công.") },
+        );
+        return;
       case "register":
-        setPendingVerificationEmail(values.email);
-        router.push("/auth/email/verify");
+        registerMutation.mutate(
+          {
+            email: values.email,
+            displayName: values.displayName,
+            password: values.password,
+          },
+          {
+            onSuccess: () => {
+              setPendingVerificationEmail(values.email);
+              router.push("/auth/email/verify");
+            },
+          },
+        );
         return;
       case "verifyEmail":
-        setPendingVerificationEmail(null);
-        router.replace("/auth");
+        verifyEmailMutation.mutate(
+          { email: valuesToValidate.email, code: values.code },
+          {
+            onSuccess: () => {
+              setPendingVerificationEmail(null);
+              router.replace("/auth");
+            },
+          },
+        );
         return;
       case "forgotPassword":
-        router.push("/auth/password/reset");
+        forgotPasswordMutation.mutate(
+          { email: values.email },
+          { onSuccess: () => router.push("/auth/password/reset") },
+        );
         return;
       case "resetPassword":
-        router.replace("/auth");
+        resetPasswordMutation.mutate(
+          { token: values.token, password: values.password },
+          { onSuccess: () => router.replace("/auth") },
+        );
         return;
-      default:
-        setNotice("Thông tin hợp lệ. Kết nối API xác thực chưa được triển khai.");
+      case "changePassword":
+        changePasswordMutation.mutate(
+          { currentPassword: values.currentPassword, newPassword: values.newPassword },
+          { onSuccess: () => setNotice("Mật khẩu đã được cập nhật.") },
+        );
+        return;
     }
   }
 
@@ -107,9 +172,12 @@ export function AuthForm({ flow }: AuthFormProps) {
 
         <Button
           onPress={handleSubmit}
+          disabled={isPending}
           className="h-12 w-full rounded-xl bg-[#264673] active:bg-[#1c3559]"
         >
-          <Text className="font-bold text-white">{config.submitLabel}</Text>
+          <Text className="font-bold text-white">
+            {isPending ? pendingLabels[flow] : config.submitLabel}
+          </Text>
         </Button>
 
         {notice ? (
