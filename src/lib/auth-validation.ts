@@ -142,7 +142,7 @@ export const authFormConfig: Record<AuthFlow, AuthFormConfig> = {
         maxLength: 128,
       },
     ],
-    links: [],
+    links: [{ href: "/auth", label: "Đã có tài khoản? Đăng nhập" }],
   },
   verifyEmail: {
     title: "Xác minh email",
