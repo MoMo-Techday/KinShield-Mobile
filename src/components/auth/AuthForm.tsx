@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { useAuthFlow } from "@/components/auth/AuthFlowProvider";
 import { authFormConfig, authSchemas, type AuthFlow } from "@/lib/auth-validation";
+import { createEmptyAuthFormValues } from "@/lib/auth-form-state";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
@@ -29,18 +30,20 @@ const pendingLabels: Record<AuthFlow, string> = {
   changePassword: "Đang cập nhật...",
 };
 
-function createInitialValues(flow: AuthFlow): Record<string, string> {
-  return Object.fromEntries(authFormConfig[flow].fields.map((field) => [field.name, ""]));
-}
-
 export function AuthForm({ flow }: AuthFormProps) {
   const config = authFormConfig[flow];
   const router = useRouter();
   const { pendingVerificationEmail, setPendingVerificationEmail } = useAuthFlow();
   const hasPendingVerificationEmailOnEntry = useRef(Boolean(pendingVerificationEmail));
-  const [values, setValues] = useState<Record<string, string>>(() => createInitialValues(flow));
+  const [values, setValues] = useState<Record<string, string>>(() => createEmptyAuthFormValues(flow));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState("");
+  function resetForm() {
+    setValues(createEmptyAuthFormValues(flow));
+    setErrors({});
+    setNotice("");
+  }
+
   const loginMutation = useLogin();
   const registerMutation = useRegister();
   const verifyEmailMutation = useVerifyEmail();
@@ -105,10 +108,16 @@ export function AuthForm({ flow }: AuthFormProps) {
       case "login":
         loginMutation.mutate(
           { email: values.email, password: values.password },
-          { onSuccess: () => setNotice("Đăng nhập thành công.") },
+          {
+            onSuccess: () => {
+              resetForm();
+              router.replace("/profile");
+            },
+          },
         );
         return;
-      case "register":
+      case "register": {
+        const registrationEmail = values.email;
         registerMutation.mutate(
           {
             email: values.email,
@@ -117,17 +126,20 @@ export function AuthForm({ flow }: AuthFormProps) {
           },
           {
             onSuccess: () => {
-              setPendingVerificationEmail(values.email);
+              setPendingVerificationEmail(registrationEmail);
+              resetForm();
               router.push("/auth/email/verify");
             },
           },
         );
         return;
+      }
       case "verifyEmail":
         verifyEmailMutation.mutate(
           { email: valuesToValidate.email, code: values.code },
           {
             onSuccess: () => {
+              resetForm();
               setPendingVerificationEmail(null);
               router.replace("/auth");
             },
@@ -137,19 +149,34 @@ export function AuthForm({ flow }: AuthFormProps) {
       case "forgotPassword":
         forgotPasswordMutation.mutate(
           { email: values.email },
-          { onSuccess: () => router.push("/auth/password/reset") },
+          {
+            onSuccess: () => {
+              resetForm();
+              router.push("/auth/password/reset");
+            },
+          },
         );
         return;
       case "resetPassword":
         resetPasswordMutation.mutate(
           { token: values.token, password: values.password },
-          { onSuccess: () => router.replace("/auth") },
+          {
+            onSuccess: () => {
+              resetForm();
+              router.replace("/auth");
+            },
+          },
         );
         return;
       case "changePassword":
         changePasswordMutation.mutate(
           { currentPassword: values.currentPassword, newPassword: values.newPassword },
-          { onSuccess: () => setNotice("Mật khẩu đã được cập nhật.") },
+          {
+            onSuccess: () => {
+              resetForm();
+              setNotice("Mật khẩu đã được cập nhật.");
+            },
+          },
         );
         return;
     }

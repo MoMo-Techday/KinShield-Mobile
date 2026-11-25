@@ -3,6 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from '@/lib/toast';
 import { getApiErrorMessage } from '@/lib/api/api-error';
 import { saveAccessToken } from '@/lib/api/token-storage';
+import { shouldRetryProfileQuery } from '@/lib/profile-state';
 import {
   authService,
   type AuthSession,
@@ -74,6 +75,7 @@ export function useCurrentUser() {
   const query = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: authService.getCurrentUser,
+    retry: shouldRetryProfileQuery,
   });
 
   useEffect(() => {
