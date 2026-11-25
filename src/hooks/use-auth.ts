@@ -61,16 +61,6 @@ export function useChangePassword() {
   return useSessionMutation<ChangePasswordRequest>(authService.changePassword);
 }
 
-export function useRefreshSession() {
-  return useMutation({
-    mutationFn: authService.refreshSession,
-    onSuccess: async (token) => {
-      await saveAccessToken(token.accessToken, token.expiresIn);
-    },
-    onError: (error) => toast.error(getApiErrorMessage(error)),
-  });
-}
-
 export function useLogout() {
   const queryClient = useQueryClient();
 
