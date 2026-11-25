@@ -6,7 +6,7 @@ import { useColorScheme } from 'nativewind';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
-import { useCurrentUser } from '@/hooks/use-auth';
+import { useCurrentUser, useLogout } from '@/hooks/use-auth';
 import { isUnauthorizedProfileError } from '@/lib/profile-state';
 import { THEME } from '@/lib/theme';
 
@@ -14,13 +14,14 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { colorScheme } = useColorScheme();
   const query = useCurrentUser();
+  const logoutMutation = useLogout();
   const unauthorized = query.isError && isUnauthorizedProfileError(query.error);
 
   useEffect(() => {
-    if (unauthorized) {
+    if (unauthorized || logoutMutation.isSuccess) {
       router.replace('/auth');
     }
-  }, [router, unauthorized]);
+  }, [logoutMutation.isSuccess, router, unauthorized]);
 
   if (query.isPending || unauthorized) {
     return (
@@ -117,6 +118,16 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
               </View>
+              <Button
+                variant="destructive"
+                disabled={logoutMutation.isPending}
+                onPress={() => logoutMutation.mutate()}
+                className="mt-6 h-12 w-full rounded-xl"
+              >
+                <Text className="font-bold text-destructive-foreground">
+                  {logoutMutation.isPending ? 'Đang đăng xuất...' : 'Đăng xuất'}
+                </Text>
+              </Button>
             </CardContent>
           </Card>
         </View>

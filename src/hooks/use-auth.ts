@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/lib/toast';
 import { getApiErrorMessage } from '@/lib/api/api-error';
-import { saveAccessToken } from '@/lib/api/token-storage';
+import { clearAccessToken, saveAccessToken } from '@/lib/api/token-storage';
 import { shouldRetryProfileQuery } from '@/lib/profile-state';
 import {
   authService,
@@ -66,6 +66,19 @@ export function useRefreshSession() {
     mutationFn: authService.refreshSession,
     onSuccess: async (token) => {
       await saveAccessToken(token.accessToken, token.expiresIn);
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error)),
+  });
+}
+
+export function useLogout() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: authService.logout,
+    onSuccess: async () => {
+      await clearAccessToken();
+      queryClient.removeQueries({ queryKey: ['auth', 'me'] });
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });

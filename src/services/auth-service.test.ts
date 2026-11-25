@@ -104,4 +104,12 @@ describe('authService', () => {
 
     expect(apiClient.get).toHaveBeenCalledWith('/auth/me');
   });
+
+  it('logs out the current session without a request body', async () => {
+    apiClient.post.mockResolvedValue({ data: undefined });
+
+    await authService.logout();
+
+    expect(apiClient.post).toHaveBeenCalledWith('/auth/logout');
+  });
 });

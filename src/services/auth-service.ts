@@ -97,4 +97,8 @@ export const authService = {
     const response = await apiClient.get<AuthUser>('/auth/me');
     return response.data;
   },
+
+  async logout(): Promise<void> {
+    await apiClient.post<void>('/auth/logout');
+  },
 };
