@@ -1,17 +1,7 @@
-import { Text, View, StyleSheet } from "react-native";
+// Route gốc điều hướng tới màn đăng nhập của luồng auth.
+import { Redirect } from 'expo-router';
 
+// Dùng chuyển hướng của Expo Router để màn gốc không nằm trong lịch sử quay lại.
 export default function Index() {
-  return (
-    <View style={styles.container}>
-      <Text>Edit src/app/index.tsx to edit this screen.</Text>
-    </View>
-  );
+    return <Redirect href="/auth" />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

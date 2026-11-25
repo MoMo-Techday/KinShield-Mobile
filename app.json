@@ -14,6 +14,7 @@
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "package": "click.kinshield.mobile.preview",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -42,6 +43,17 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "f6885f1e-a54e-4075-84e8-f05842fdbbeb"
+      }
+    },
+    "owner": "momo-techday"
   }
 }

@@ -1,0 +1,82 @@
+name: Android APK preview
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  enqueue:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EAS_CLI_VERSION: "27.11.0"
+      EXPO_PROJECT_ID: ${{ vars.EXPO_PROJECT_ID }}
+
+    steps:
+      - name: Check Expo settings
+        shell: bash
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [[ -z "$EXPO_TOKEN" || ! "$EXPO_PROJECT_ID" =~ ^[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}$ ]]; then
+            echo '::error::Set the EXPO_TOKEN secret and EXPO_PROJECT_ID variable. See .github/android-apk-preview.md.'
+            exit 1
+          fi
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure preview API URL
+        if: vars.EXPO_PUBLIC_API_URL != ''
+        shell: bash
+        env:
+          EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL }}
+        run: |
+          # Ghi URL vào profile để máy build của Expo nhận được biến từ GitHub.
+          jq --arg url "$EXPO_PUBLIC_API_URL" \
+            '.build.preview.android.env.EXPO_PUBLIC_API_URL = $url' eas.json > "$RUNNER_TEMP/eas.json"
+          mv "$RUNNER_TEMP/eas.json" eas.json
+
+      - name: Queue signed Android APK on EAS
+        shell: bash
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          npx --yes "eas-cli@$EAS_CLI_VERSION" project:init \
+            --id "$EXPO_PROJECT_ID" --non-interactive --no-icon
+
+          # Dùng khóa ký đã lưu trên Expo để các bản APK có thể cập nhật lên nhau.
+          npx --yes "eas-cli@$EAS_CLI_VERSION" build \
+            --platform android --profile preview --freeze-credentials \
+            --message "main @ ${GITHUB_SHA:0:12}" \
+            --non-interactive --no-wait --json > "$RUNNER_TEMP/android-apk-build.json"
+
+      - name: Link to EAS Build
+        shell: bash
+        run: |
+          build_url=$(jq -er '
+            .[] | select(.platform == "ANDROID" and .buildProfile == "preview")
+            | "https://expo.dev/accounts/\(.app.ownerAccount.name | @uri)/projects/\(.app.slug | @uri)/builds/\(.id | @uri)"
+          ' "$RUNNER_TEMP/android-apk-build.json")
+          {
+            printf '## KinShield Mobile · APK preview\n\n'
+            printf 'Đã gửi commit `%s` tới EAS Build.\n\n' "$GITHUB_SHA"
+            printf '[Theo dõi build và tải APK khi hoàn tất](%s)\n' "$build_url"
+          } >> "$GITHUB_STEP_SUMMARY"
