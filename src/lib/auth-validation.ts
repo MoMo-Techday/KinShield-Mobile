@@ -18,14 +18,28 @@ export const authSchemas = {
     email: emailWithLimit,
     password: existingPassword,
   }),
-  register: z.object({
-    email: emailWithLimit,
-    displayName: z
-      .string()
-      .min(1, "Vui lòng nhập họ và tên.")
-      .max(120, "Họ và tên không được vượt quá 120 ký tự."),
-    password,
-  }),
+  register: z
+    .object({
+      email: emailWithLimit,
+      displayName: z
+        .string()
+        .min(1, "Vui lòng nhập họ và tên.")
+        .max(120, "Họ và tên không được vượt quá 120 ký tự."),
+      password,
+      confirmPassword: z
+        .string()
+        .min(1, "Vui lòng xác nhận mật khẩu.")
+        .max(128, "Mật khẩu xác nhận không được vượt quá 128 ký tự."),
+    })
+    .superRefine(({ password, confirmPassword }, context) => {
+      if (password !== confirmPassword) {
+        context.addIssue({
+          code: "custom",
+          path: ["confirmPassword"],
+          message: "Mật khẩu xác nhận không khớp.",
+        });
+      }
+    }),
   verifyEmail: z.object({
     email: z.string().email("Vui lòng nhập địa chỉ email hợp lệ."),
     code: z.string().regex(/^\d{6}$/, "Mã xác minh phải gồm đúng 6 chữ số."),
@@ -49,6 +63,7 @@ export type AuthFieldName =
   | "email"
   | "displayName"
   | "password"
+  | "confirmPassword"
   | "code"
   | "token"
   | "currentPassword"
@@ -137,6 +152,14 @@ export const authFormConfig: Record<AuthFlow, AuthFormConfig> = {
         name: "password",
         label: "Mật khẩu",
         placeholder: "Ít nhất 15 ký tự",
+        type: "password",
+        autoComplete: "new-password",
+        maxLength: 128,
+      },
+      {
+        name: "confirmPassword",
+        label: "Xác nhận mật khẩu",
+        placeholder: "Nhập lại mật khẩu",
         type: "password",
         autoComplete: "new-password",
         maxLength: 128,

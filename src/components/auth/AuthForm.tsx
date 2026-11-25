@@ -68,9 +68,13 @@ export function AuthForm({ flow }: AuthFormProps) {
   function updateField(name: string, value: string) {
     setValues((current) => ({ ...current, [name]: value }));
     setErrors((current) => {
-      if (!(name in current)) return current;
+      const clearConfirmation = flow === "register" && name === "password";
+      if (!(name in current) && !(clearConfirmation && "confirmPassword" in current)) {
+        return current;
+      }
       const next = { ...current };
       delete next[name];
+      if (clearConfirmation) delete next.confirmPassword;
       return next;
     });
     setNotice("");
