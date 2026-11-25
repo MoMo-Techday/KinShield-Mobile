@@ -200,9 +200,9 @@ export function AuthForm({ flow }: AuthFormProps) {
         <Button
           onPress={handleSubmit}
           disabled={isPending}
-          className="h-12 w-full rounded-xl bg-[#264673] active:bg-[#1c3559]"
+          className="h-12 w-full rounded-xl bg-primary active:bg-primary/90"
         >
-          <Text className="font-bold text-white">
+          <Text className="font-bold text-primary-foreground">
             {isPending ? pendingLabels[flow] : config.submitLabel}
           </Text>
         </Button>
@@ -210,7 +210,7 @@ export function AuthForm({ flow }: AuthFormProps) {
         {notice ? (
           <Text
             accessibilityLiveRegion="polite"
-            className="rounded-xl border border-[#2e6f5e]/20 bg-[#ebf5f2] px-4 py-3 text-sm leading-6 text-[#245848]"
+            className="rounded-xl border border-success-foreground/20 bg-success px-4 py-3 text-sm leading-6 text-success-foreground"
           >
             {notice}
           </Text>
@@ -223,7 +223,7 @@ export function AuthForm({ flow }: AuthFormProps) {
               accessibilityRole="link"
               onPress={() => router.push(link.href)}
             >
-              <Text className="text-sm font-semibold text-[#264673] underline">{link.label}</Text>
+              <Text className="text-sm font-semibold text-primary underline">{link.label}</Text>
             </Pressable>
           ))}
         </View>

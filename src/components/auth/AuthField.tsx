@@ -19,7 +19,7 @@ export function AuthField({ field, value, error, onChange }: AuthFieldProps) {
   return (
     <View className="gap-2">
       <View className="flex-row items-center justify-between">
-        <Text nativeID={`${inputId}-label`} className="text-sm font-semibold text-[#1e2229]">
+        <Text nativeID={`${inputId}-label`} className="text-sm font-semibold text-foreground">
           {field.label}
         </Text>
         {action ? (
@@ -27,7 +27,7 @@ export function AuthField({ field, value, error, onChange }: AuthFieldProps) {
             accessibilityRole="link"
             onPress={() => router.push(action.href)}
           >
-            <Text className="text-xs font-medium text-[#777d86] active:text-[#264673]">
+            <Text className="text-xs font-medium text-muted-foreground active:text-primary">
               {action.label}
             </Text>
           </Pressable>
@@ -47,10 +47,10 @@ export function AuthField({ field, value, error, onChange }: AuthFieldProps) {
         accessibilityLabel={field.label}
         accessibilityHint={error}
         onChangeText={(text) => onChange(field.name, text)}
-        className="h-12 rounded-xl border-[#e5ddd0] bg-white px-4 text-base"
+        className="h-12 rounded-xl border-input bg-card px-4 text-base text-foreground"
       />
       {error ? (
-        <Text accessibilityLiveRegion="polite" className="text-sm font-medium text-[#b91c1c]">
+        <Text accessibilityLiveRegion="polite" className="text-sm font-medium text-destructive">
           {error}
         </Text>
       ) : null}
