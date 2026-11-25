@@ -14,9 +14,10 @@ Khi có commit mới trên `main`, GitHub Actions publish EAS Update vào nhánh
    update cho project. Tạo token qua
    [Expo access tokens](https://docs.expo.dev/accounts/programmatic-access/).
 3. Trong tab **Variables**, thêm repository variable `EXPO_PROJECT_ID` với UUID
-   trên. Có thể đặt thêm `EXPO_PUBLIC_API_URL` nếu team có API preview riêng.
-   Mặc định workflow dùng `https://api-core.kinshield.click/api`. Nếu biến này
-   cũng có trong môi trường `preview` trên Expo, giá trị từ Expo được ưu tiên.
+   trên. Có thể đặt thêm `EXPO_PUBLIC_API_URL` và `EXPO_PUBLIC_WS_URL` để đổi
+   endpoint preview. Mặc định workflow dùng các URL trong `.env.example`.
+   Nếu cùng một biến được đặt trong môi trường `preview` trên Expo, giá trị
+   từ Expo được ưu tiên khi publish update.
 
 ## Mở bản preview
 

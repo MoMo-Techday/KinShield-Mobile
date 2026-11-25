@@ -32,6 +32,7 @@ Lệnh `project:init` có thể ghi liên kết project vào `app.json` trên m�
 Có thể dùng **Run workflow** trên `main` để gửi lại yêu cầu build. Mỗi APK
 dùng một lượt EAS Build. iOS tiếp tục quét QR từ workflow **Expo Go preview**.
 
-APK mặc định dùng `https://api-core.kinshield.click/api`. Để đổi API cho các
-bản Android chạy từ GitHub, đặt repository variable `EXPO_PUBLIC_API_URL`.
-Giá trị này được chuyển vào profile build để có mặt trong APK.
+APK mặc định dùng các endpoint khai báo trong profile `preview` của `eas.json`.
+Để đổi chúng cho các bản build từ GitHub, đặt repository variable
+`EXPO_PUBLIC_API_URL` hoặc `EXPO_PUBLIC_WS_URL`. Workflow chuyển các giá trị
+đã đặt vào profile build để máy build Expo nhận được chúng.

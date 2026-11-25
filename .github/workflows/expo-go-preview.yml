@@ -57,6 +57,7 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL || 'https://api-core.kinshield.click/api' }}
+          EXPO_PUBLIC_WS_URL: ${{ vars.EXPO_PUBLIC_WS_URL || 'https://api-core.kinshield.click' }}
         run: |
           # Liên kết bản checkout với project Expo của team để EAS biết nơi publish.
           npx --yes "eas-cli@$EAS_CLI_VERSION" project:init \
