@@ -3,6 +3,9 @@
     "name": "kinshield-mobile",
     "slug": "kinshield-mobile",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "kinshieldmobile",
