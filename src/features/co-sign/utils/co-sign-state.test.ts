@@ -45,6 +45,26 @@ describe('Co-Sign mobile state', () => {
             wall.mockRestore();
         }
     });
+    // Thiếu deadline hoặc sai mẫu đồng hồ Core phải khóa cả hai nút của người xác minh.
+    it.each([
+        { expiresAt: null, serverNow: detail.snapshot.serverNow },
+        { expiresAt: 'invalid-deadline', serverNow: detail.snapshot.serverNow },
+        { expiresAt: detail.snapshot.expiresAt, serverNow: 'invalid-clock' },
+    ])(
+        'keeps decision actions disabled for incomplete clock data %j',
+        (clock) => {
+            const reading = {
+                ...detail,
+                snapshot: { ...detail.snapshot, ...clock },
+            };
+            const remaining = remainingMs(reading, reading.requestedAt);
+            expect(remaining).toBe(0);
+            expect(
+                allowedActions('GUARDIAN', reading.snapshot.status, remaining),
+            ).toEqual([]);
+        },
+    );
+
     // Quyết định bị khóa tại đúng điểm hết hạn và với mọi trạng thái sau quyết định.
     it('grants only the actions for the active role and pending deadline', () => {
         expect(allowedActions('PARENT', 'PENDING_REVIEW', 1)).toEqual([

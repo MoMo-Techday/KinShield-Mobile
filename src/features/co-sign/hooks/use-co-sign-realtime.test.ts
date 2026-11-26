@@ -171,6 +171,50 @@ describe('Co-Sign socket lifecycle', () => {
         ]);
     });
 
+    // Refresh bắt đầu ở phiên cũ có thể trả về sau logout, khi layout mới chưa mount.
+    // Kết quả về muộn không được mở transport hay mang token trở lại socket đã dọn.
+    it('discards a refresh that finishes after the account socket was disposed', async () => {
+        const refresh = Promise.withResolvers<{ accessToken: string }>();
+        harness.refreshAccessToken.mockReturnValueOnce(refresh.promise);
+        useCoSignRealtime(user, family, true);
+        await vi.waitFor(() =>
+            expect(harness.socket.connect).toHaveBeenCalledOnce(),
+        );
+
+        harness.listeners.get('connect_error')?.({
+            data: { code: 'UNAUTHORIZED' },
+        });
+        await vi.waitFor(() =>
+            expect(harness.refreshAccessToken).toHaveBeenCalledOnce(),
+        );
+        harness.revision++;
+        harness.revisionListener?.();
+        refresh.resolve({ accessToken: 'token-for-old-account' });
+        await refresh.promise;
+
+        expect(harness.socket.connect).toHaveBeenCalledTimes(1);
+        expect(harness.socket.auth).toEqual({});
+        expect(harness.invalidateQueries).not.toHaveBeenCalled();
+    });
+
+    // Event v1 đến sau v2 không được invalidate lại UI khi HTTP đang lấy kết quả mới.
+    it('ignores an older event without refreshing the list or detail twice', async () => {
+        harness.getQueryData.mockReturnValue({ snapshot: { version: 1 } });
+        useCoSignRealtime(user, family, true);
+        await vi.waitFor(() =>
+            expect(harness.socket.connect).toHaveBeenCalledOnce(),
+        );
+
+        const update = harness.listeners.get('co_sign.updated');
+        update?.({ requestId, version: 2, status: 'BLOCKED' });
+        update?.({ requestId, version: 1, status: 'PENDING_REVIEW' });
+
+        expect(harness.invalidateQueries.mock.calls).toEqual([
+            [{ queryKey: coSignKeys.detail(user, family, requestId) }],
+            [{ queryKey: coSignKeys.list(user, family) }],
+        ]);
+    });
+
     // HTTP đã xoay token trong lúc mất kết nối thì handshake dùng token mới mà không xoay lần nữa.
     it('reuses the latest HTTP token after an unauthorized reconnect', async () => {
         useCoSignRealtime(user, family, true);
