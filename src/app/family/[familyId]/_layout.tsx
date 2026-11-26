@@ -1,4 +1,4 @@
-// Mọi route con dùng membership đã được Core xác nhận cho gia đình hiện tại.
+// Mọi route Co-Sign con dùng cùng membership và socket trong phạm vi gia đình.
 import { Redirect, Slot, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator } from 'react-native';
 import {
@@ -10,10 +10,11 @@ import {
     FamilyIssue,
     FamilyPage,
 } from '@/features/family/components/FamilyPage';
+import { useCoSignRealtime } from '@/features/co-sign/hooks/use-co-sign-realtime';
 import { classifyFamilyError } from '@/features/co-sign/utils/co-sign-errors';
 import { isUuid } from '@/features/co-sign/utils/co-sign-state';
 
-// Cung cấp dữ liệu cho các màn trong phạm vi gia đình và ẩn khi Core xác nhận mất quyền.
+// Giữ một socket cho cả danh sách và chi tiết. Ẩn dữ liệu ngay khi API xác nhận mất quyền.
 function FamilyScope({ familyId }: { familyId: string }) {
     const userId = useFamilyUser();
     const family = useFamilyDetails(userId, familyId);
@@ -24,6 +25,7 @@ function FamilyScope({ familyId }: { familyId: string }) {
         issue === 'missing' ||
         issue === 'forbidden' ||
         issue === 'unauthorized';
+    useCoSignRealtime(userId, familyId, Boolean(family.data) && !denied);
 
     if (!family.data || denied) {
         return (

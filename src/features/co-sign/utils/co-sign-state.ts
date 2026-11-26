@@ -3,12 +3,21 @@ import type { FamilyRole } from '@/features/family/types/family';
 import type {
     CoSignAction,
     CoSignDetail,
+    CoSignEvent,
     CoSignPage,
     CoSignStatus,
     SimulationAttempt,
     TimedCoSign,
 } from '@/features/co-sign/types/co-sign';
 
+const statuses: readonly CoSignStatus[] = [
+    'NOT_REQUIRED',
+    'PENDING_REVIEW',
+    'APPROVED',
+    'BLOCKED',
+    'CANCELLED',
+    'EXPIRED',
+];
 const vnd = new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: 'VND',
@@ -147,7 +156,24 @@ export function newerPage(
     };
 }
 
-// Router chỉ mở yêu cầu có ID hợp lệ để tránh dựng REST path từ dữ liệu tùy ý.
+// Chỉ dùng metadata hợp lệ để invalidate. Event trùng hoặc thấp hơn version đã biết không tạo GET dư.
+export function isNewUpdate(
+    event: unknown,
+    previousVersion: number,
+): event is CoSignEvent {
+    if (!event || typeof event !== 'object') return false;
+    const value = event as Partial<CoSignEvent>;
+    return (
+        typeof value.requestId === 'string' &&
+        isUuid(value.requestId) &&
+        typeof value.version === 'number' &&
+        Number.isSafeInteger(value.version) &&
+        value.version > previousVersion &&
+        statuses.includes(value.status as CoSignStatus)
+    );
+}
+
+// Router và sự kiện đều phải cung cấp ID hợp lệ trước khi interpolate vào REST path.
 export function isUuid(value: unknown): value is string {
     return (
         typeof value === 'string' &&

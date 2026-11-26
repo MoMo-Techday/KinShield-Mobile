@@ -27,6 +27,11 @@ export type CoSignPage = {
     nextCursor: string | null;
     serverNow: string;
 };
+export type CoSignEvent = {
+    requestId: string;
+    status: CoSignStatus;
+    version: number;
+};
 export type TimedCoSign<T> = { snapshot: T; requestedAt: number };
 
 export type SimulationAttempt = {
