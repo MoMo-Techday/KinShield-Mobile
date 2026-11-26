@@ -1,11 +1,13 @@
-// Trang gia đình hiển thị vai trò và thành viên theo quyền đã đọc từ Core.
+// Trang gia đình kết hợp thành viên, tạo mô phỏng và lịch sử theo quyền đã đọc từ Core.
 import { View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { FamilyPage } from '@/features/family/components/FamilyPage';
 import { FamilyMembership } from '@/features/family/components/FamilyMembership';
 import { useActiveFamily } from '@/features/family/hooks/family-context';
+import { CoSignHistory } from '@/features/co-sign/components/CoSignHistory';
+import { SimulationForm } from '@/features/co-sign/components/SimulationForm';
 
-// Hiển thị thông tin gia đình và vai trò của tài khoản đang xem.
+// PARENT tạo giao dịch, GUARDIAN vào danh sách yêu cầu được phép xác minh.
 export function FamilyDashboard() {
     const family = useActiveFamily();
     return (
@@ -20,6 +22,8 @@ export function FamilyDashboard() {
                         : 'Bạn là người xác minh'}
                 </Text>
             </View>
+            {family.viewerRole === 'PARENT' && <SimulationForm />}
+            <CoSignHistory />
             <FamilyMembership />
         </FamilyPage>
     );
