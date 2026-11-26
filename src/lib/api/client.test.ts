@@ -10,6 +10,7 @@ import {
     endAuthSession,
     refreshAccessToken,
     storeAuthSession,
+    subscribeSessionRevision,
 } from '@/lib/api/client';
 import { getAccessToken, getRefreshToken } from '@/lib/api/token-storage';
 
@@ -80,6 +81,122 @@ describe('native session lifecycle', () => {
     beforeEach(() => {
         testIo.adapter.mockReset();
         testIo.storage.clear();
+    });
+
+    // Refresh bị Core từ chối thu hồi cả socket và quyền dùng phản hồi thành công của epoch cũ.
+    it('notifies session subscribers and discards delayed family data after a rejected refresh', async () => {
+        await storeAuthSession(firstTokens);
+        const delayed = Promise.withResolvers<void>();
+        const notified = vi.fn();
+        const unsubscribe = subscribeSessionRevision(notified);
+        testIo.adapter.mockImplementation(async (config) => {
+            if (config.url === '/auth/native/refresh')
+                return respond(config, 401);
+            await delayed.promise;
+            return respond(config, 200, [{ id: 'old-family' }]);
+        });
+        const inFlight = apiClient.get('/families');
+        void inFlight.catch(() => undefined);
+
+        try {
+            await vi.waitFor(() =>
+                expect(testIo.adapter).toHaveBeenCalledOnce(),
+            );
+            await expect(refreshAccessToken()).rejects.toMatchObject({
+                response: { status: 401 },
+            });
+            await expect(getAccessToken()).resolves.toBeNull();
+            expect(notified).toHaveBeenCalledTimes(1);
+            delayed.resolve();
+            await expect(inFlight).rejects.toMatchObject({
+                code: 'ERR_CANCELED',
+            });
+        } finally {
+            delayed.resolve();
+            unsubscribe();
+        }
+    });
+
+    // Còn mạng thì logout chờ Core xác nhận. Nếu request thất bại, socket của phiên hiện tại được giữ.
+    it('notifies revision listeners only after Core accepts logout and accepts unsubscribe', async () => {
+        await storeAuthSession(firstTokens);
+        const notified = vi.fn();
+        const unsubscribe = subscribeSessionRevision(notified);
+        testIo.adapter.mockImplementationOnce(async (config) =>
+            respond(config, 503),
+        );
+        testIo.adapter.mockImplementationOnce(async (config) =>
+            respond(config, 204),
+        );
+
+        try {
+            await expect(endAuthSession()).rejects.toMatchObject({
+                response: { status: 503 },
+            });
+            expect(notified).not.toHaveBeenCalled();
+            await endAuthSession();
+            expect(notified).toHaveBeenCalledTimes(1);
+        } finally {
+            unsubscribe();
+        }
+        await storeAuthSession(nextTokens);
+        expect(notified).toHaveBeenCalledTimes(1);
+    });
+
+    // Family và Co-Sign dùng cùng Bearer/refresh với /me, giữ nguyên idempotency key sau một lần 401.
+    it('refreshes a protected family mutation without changing its idempotency key', async () => {
+        await storeAuthSession(firstTokens);
+        testIo.adapter.mockImplementation(async (config) => {
+            if (config.url === '/auth/native/refresh')
+                return respond(config, 200, nextTokens);
+            if (config.headers.get('Authorization') === 'Bearer access-1')
+                return respond(config, 401);
+            return respond(config, 201, { id: 'request' });
+        });
+
+        await expect(
+            apiClient.post(
+                '/families/demo/co-sign-requests',
+                { amountVnd: 5_000_000 },
+                {
+                    headers: { 'Idempotency-Key': 'attempt' },
+                },
+            ),
+        ).resolves.toMatchObject({ status: 201 });
+        const writes = testIo.adapter.mock.calls
+            .map(([config]) => config)
+            .filter((config) => config.url?.endsWith('/co-sign-requests'));
+        expect(
+            writes.map(({ headers, data }) => [
+                headers.get('Idempotency-Key'),
+                JSON.parse(data),
+            ]),
+        ).toEqual([
+            ['attempt', { amountVnd: 5_000_000 }],
+            ['attempt', { amountVnd: 5_000_000 }],
+        ]);
+    });
+
+    // Phản hồi thành công của user cũ không khôi phục dữ liệu nhạy cảm sau khi đổi phiên.
+    it('cancels a family result from the old account even when Core returned 200', async () => {
+        await storeAuthSession(firstTokens);
+        const delayed = Promise.withResolvers<void>();
+        testIo.adapter.mockImplementation(async (config) => {
+            expect(config.headers.get('Authorization')).toBe('Bearer access-1');
+            await delayed.promise;
+            return respond(config, 200, [{ id: 'old-family' }]);
+        });
+        const response = apiClient.get('/families');
+        void response.catch(() => undefined);
+        try {
+            await vi.waitFor(() =>
+                expect(testIo.adapter).toHaveBeenCalledOnce(),
+            );
+            await storeAuthSession(nextTokens);
+        } finally {
+            delayed.resolve();
+        }
+        await expect(response).rejects.toMatchObject({ code: 'ERR_CANCELED' });
     });
 
     // Một access đã hết hạn trong kho xuất hiện khi người dùng mở app sau một thời gian.
