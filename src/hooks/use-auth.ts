@@ -1,3 +1,4 @@
+// Điều phối vòng đời phiên Mobile và cache dữ liệu gắn với tài khoản hiện tại.
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -5,6 +6,7 @@ import { toast } from '@/lib/toast';
 import { getApiErrorMessage } from '@/lib/api/api-error';
 import { usesAuthCookies } from '@/lib/api/auth-transport';
 import { storeAuthSession } from '@/lib/api/client';
+import { clearSessionQueries } from '@/lib/api/session-query';
 import { getRefreshToken } from '@/lib/api/token-storage';
 import {
     isUnauthorizedProfileError,
@@ -30,6 +32,7 @@ function useSessionMutation<TVariables>(
         onSuccess: async (session) => {
             await storeAuthSession(session);
             await queryClient.cancelQueries({ queryKey: ['auth', 'me'] });
+            await clearSessionQueries(queryClient);
             queryClient.setQueryData(['auth', 'me'], session.user);
         },
         onError: (error) => toast.error(getApiErrorMessage(error)),
@@ -83,6 +86,7 @@ export function useLogout() {
         mutationFn: authService.logout,
         onSuccess: async () => {
             await queryClient.cancelQueries({ queryKey: ['auth', 'me'] });
+            await clearSessionQueries(queryClient);
             queryClient.removeQueries({ queryKey: ['auth', 'me'] });
             queryClient.removeQueries({ queryKey: ['auth', 'restore'] });
         },
