@@ -1,8 +1,11 @@
 import { useEffect } from 'react';
+import { AppState } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/lib/toast';
 import { getApiErrorMessage } from '@/lib/api/api-error';
+import { usesAuthCookies } from '@/lib/api/auth-transport';
 import { storeAuthSession } from '@/lib/api/client';
+import { getRefreshToken } from '@/lib/api/token-storage';
 import {
     isUnauthorizedProfileError,
     shouldRetryProfileQuery,
@@ -81,17 +84,41 @@ export function useLogout() {
         onSuccess: async () => {
             await queryClient.cancelQueries({ queryKey: ['auth', 'me'] });
             queryClient.removeQueries({ queryKey: ['auth', 'me'] });
+            queryClient.removeQueries({ queryKey: ['auth', 'restore'] });
         },
         onError: (error) => toast.error(getApiErrorMessage(error)),
     });
 }
 
+// Kiểm tra kho local khi mở ứng dụng. Hồ sơ sẽ xác minh phiên qua Core.
+export function useRestoreSession() {
+    return useQuery({
+        queryKey: ['auth', 'restore'],
+        queryFn: async () => Boolean(await getRefreshToken()),
+        enabled: !usesAuthCookies,
+        gcTime: 0,
+        retry: false,
+    });
+}
+
+// Android/iOS gọi lại /me khi trở về foreground để xoay token nếu cần.
 export function useCurrentUser() {
     const query = useQuery({
         queryKey: ['auth', 'me'],
         queryFn: authService.getCurrentUser,
         retry: shouldRetryProfileQuery,
     });
+    const { refetch } = query;
+
+    useEffect(() => {
+        if (usesAuthCookies) return;
+
+        const listener = AppState.addEventListener('change', (state) => {
+            if (state === 'active') void refetch();
+        });
+        return () => listener.remove();
+    }, [refetch]);
+
     useEffect(() => {
         if (query.error && !isUnauthorizedProfileError(query.error)) {
             toast.error(getApiErrorMessage(query.error));
