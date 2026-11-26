@@ -9,7 +9,7 @@ import {
 } from '@/features/family/utils/family-queries';
 
 // Đồng bộ khi quay lại từ nền, kể cả nếu Android/iOS không gửi sự kiện online cho React Query.
-export function useForegroundRefresh(refresh: () => unknown) {
+function useForegroundRefresh(refresh: () => unknown) {
     useEffect(() => {
         const listener = AppState.addEventListener('change', (state) => {
             if (state === 'active') void refresh();
