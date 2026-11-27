@@ -153,11 +153,21 @@ export default function ProfileScreen() {
                                 </View>
                             </View>
                             <Button
-                                testID="open-family"
+                                testID="open-xray"
                                 className="mt-6 h-auto min-h-12 w-full rounded-xl"
-                                onPress={() => router.push('/family')}
+                                onPress={() => router.push('/xray')}
                             >
                                 <Text className="font-bold text-primary-foreground">
+                                    Soi tin nhắn, Bill &amp; QR (X-Ray)
+                                </Text>
+                            </Button>
+                            <Button
+                                testID="open-family"
+                                variant="secondary"
+                                className="mt-3 h-auto min-h-12 w-full rounded-xl"
+                                onPress={() => router.push('/family')}
+                            >
+                                <Text className="font-bold text-secondary-foreground">
                                     Gia đình và xác minh
                                 </Text>
                             </Button>

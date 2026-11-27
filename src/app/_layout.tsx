@@ -24,6 +24,10 @@ export default function RootLayout() {
                             name="family"
                             options={{ title: 'Gia đình' }}
                         />
+                        <Stack.Screen
+                            name="xray"
+                            options={{ title: 'Soi 1 chạm X-Ray' }}
+                        />
                     </Stack>
                     <PortalHost />
                 </AppProviders>
