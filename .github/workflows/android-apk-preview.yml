@@ -7,14 +7,21 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: android-apk-preview-main
+  cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build Android APK via EAS
+  build-apk:
+    name: Build Android APK & Publish GitHub Release
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 30
+    env:
+      EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL || 'https://api-core.kinshield.click/api' }}
+      EXPO_PUBLIC_WS_URL: ${{ vars.EXPO_PUBLIC_WS_URL || 'https://api-core.kinshield.click' }}
 
     steps:
       - name: Checkout repository
@@ -28,15 +35,72 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Setup Expo & EAS CLI
-        uses: expo/expo-github-action@v8
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
-          eas-version: 27.11.0
-          token: ${{ secrets.EXPO_TOKEN }}
-          packager: npm
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Android APK via EAS
-        run: eas build --platform android --profile preview --freeze-credentials --message "main @ ${GITHUB_SHA:0:12}" --non-interactive
+      - name: Prebuild native Android project
+        run: npx expo prebuild --platform android --clean --non-interactive
+
+      - name: Build Android APK (arm64-v8a)
+        working-directory: android
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon
+
+      - name: Prepare APK file
+        shell: bash
+        run: |
+          apk_source="android/app/build/outputs/apk/release/app-release.apk"
+          if [[ ! -f "$apk_source" ]]; then
+            echo "::error::Không tìm thấy file APK tại $apk_source"
+            exit 1
+          fi
+          cp "$apk_source" "$RUNNER_TEMP/kinshield-mobile-preview.apk"
+          ls -lh "$RUNNER_TEMP/kinshield-mobile-preview.apk"
+
+      - name: Publish APK to GitHub Releases (preview-latest)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="preview-latest"
+          apk_file="$RUNNER_TEMP/kinshield-mobile-preview.apk"
+          short_sha="${GITHUB_SHA:0:12}"
+          notes=$(printf 'Bản cài đặt Android **KinShield Mobile (Preview APK)** tự động build từ nhánh `main`.\n\n- **Commit:** `%s`\n- **API URL:** `%s`\n- **WebSocket URL:** `%s`\n- **Kiến trúc:** `arm64-v8a` (điện thoại Android thật)\n\nTải file `kinshield-mobile-preview.apk` bên dưới và cài trực tiếp trên Android.' "$short_sha" "$EXPO_PUBLIC_API_URL" "$EXPO_PUBLIC_WS_URL")
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" "$apk_file" --clobber
+            gh release edit "$tag" --target "$GITHUB_SHA" --title "KinShield Mobile Preview (APK)" --notes "$notes"
+          else
+            gh release create "$tag" "$apk_file" \
+              --target "$GITHUB_SHA" \
+              --title "KinShield Mobile Preview (APK)" \
+              --prerelease \
+              --notes "$notes"
+          fi
+
+      - name: Upload APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kinshield-mobile-preview-${{ github.sha }}
+          path: ${{ runner.temp }}/kinshield-mobile-preview.apk
+          retention-days: 14
+
+      - name: Write APK download summary
+        shell: bash
+        run: |
+          download_url="https://github.com/${GITHUB_REPOSITORY}/releases/download/preview-latest/kinshield-mobile-preview.apk"
+          release_url="https://github.com/${GITHUB_REPOSITORY}/releases/tag/preview-latest"
+          {
+            printf '## KinShield Mobile · Android APK Preview\n\n'
+            printf '- **Commit:** `%s`\n' "${GITHUB_SHA:0:12}"
+            printf '- **Tải trực tiếp `.apk`:** [kinshield-mobile-preview.apk](%s)\n' "$download_url"
+            printf '- **Trang GitHub Release:** [preview-latest](%s)\n' "$release_url"
+          } >> "$GITHUB_STEP_SUMMARY"

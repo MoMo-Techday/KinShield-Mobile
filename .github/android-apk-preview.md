@@ -1,31 +1,18 @@
-# APK preview cho KinShield Mobile
+# APK preview cho KinShield Mobile (GitHub Actions + GitHub Releases)
 
-Mỗi lần có commit mới trên `main`, workflow **Android APK preview** gửi một bản
-Android lên EAS Build. Profile `preview` tạo file APK có thể cài trực tiếp với
-package `click.kinshield.mobile.preview`.
+Mỗi lần có commit mới trên `main` (hoặc bấm **Run workflow** trên `main`), workflow **Android APK preview** tự biên dịch file Android `.apk` (`arm64-v8a`) trực tiếp trên GitHub Actions bằng Gradle — **không tốn quota EAS** và **không cần `EXPO_TOKEN`**.
 
-## Chuẩn bị khóa ký một lần
+## Tải file `.apk`
 
-Workflow dùng secret `EXPO_TOKEN` (tạo tại [Expo access tokens](https://docs.expo.dev/accounts/programmatic-access/)).
-Trước lần chạy đầu, dùng tài khoản Expo có quyền quản lý project để tạo hoặc
-chọn keystore Android cho profile `preview`. Chạy trong thư mục `KinShield-Mobile`:
+- **Link cố định mới nhất:**
+  `https://github.com/MoMo-Techday/KinShield-Mobile/releases/download/preview-latest/kinshield-mobile-preview.apk`
+- **Trang Release:** `GitHub → Releases → preview-latest`
+- Ngoài ra file `.apk` cũng được đính kèm 14 ngày trong mục **Artifacts** của từng lần chạy workflow.
 
-```powershell
-npm ci
-npx eas-cli@27.11.0 login
-npx eas-cli@27.11.0 credentials:configure-build --platform android --profile preview
-```
+## Cấu hình endpoint (tùy chọn)
 
-Chọn keystore có sẵn nếu đã tạo cho package này, hoặc chọn tạo keystore mới nếu
-chưa có. Expo lưu keystore để các lần build sau dùng lại cùng khóa ký.
+Mặc định workflow trỏ về:
+- `EXPO_PUBLIC_API_URL`: `https://api-core.kinshield.click/api`
+- `EXPO_PUBLIC_WS_URL`: `https://api-core.kinshield.click`
 
-## Tải APK
-
-1. Vào **GitHub → Actions → Android APK preview**.
-2. Mở log bước **Build Android APK via EAS** để lấy link trang EAS Build và link tải trực tiếp file `.apk`.
-3. Tải và cài file APK trên điện thoại Android.
-
-Có thể dùng **Run workflow** trên `main` để gửi lại yêu cầu build. Mỗi APK
-dùng một lượt EAS Build.
-
-APK mặc định dùng các endpoint khai báo trong profile `preview` của `eas.json`.
+Để đổi URL mà không sửa code, thêm repository variable `EXPO_PUBLIC_API_URL` hoặc `EXPO_PUBLIC_WS_URL` trong **GitHub → Settings → Secrets and variables → Actions → Variables**.
