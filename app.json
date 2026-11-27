@@ -38,7 +38,34 @@
           "imageWidth": 76
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "KinShield cần quyền đọc ảnh để kiểm tra biên lai chuyển khoản và mã QR nghi ngờ lừa đảo.",
+          "cameraPermission": "KinShield cần quyền máy ảnh để chụp biên lai hoặc ảnh màn hình cần kiểm tra."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "KinShield cần quyền máy ảnh để quét mã VietQR và đường dẫn nghi ngờ lừa đảo."
+        }
+      ],
+      [
+        "expo-share-intent",
+        {
+          "iosActivationRules": {
+            "NSExtensionActivationSupportsText": true,
+            "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
+            "NSExtensionActivationSupportsImageWithMaxCount": 1
+          },
+          "androidIntentFilters": [
+            "text/*",
+            "image/*"
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
