@@ -35,11 +35,11 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - name: Set up Gradle cache
         uses: gradle/actions/setup-gradle@v4
@@ -99,8 +99,8 @@ jobs:
           download_url="https://github.com/${GITHUB_REPOSITORY}/releases/download/preview-latest/kinshield-mobile-preview.apk"
           release_url="https://github.com/${GITHUB_REPOSITORY}/releases/tag/preview-latest"
           {
-            printf '## KinShield Mobile · Android APK Preview\n\n'
-            printf '- **Commit:** `%s`\n' "${GITHUB_SHA:0:12}"
-            printf '- **Tải trực tiếp `.apk`:** [kinshield-mobile-preview.apk](%s)\n' "$download_url"
-            printf '- **Trang GitHub Release:** [preview-latest](%s)\n' "$release_url"
+            printf -- '## KinShield Mobile · Android APK Preview\n\n'
+            printf -- '- **Commit:** `%s`\n' "${GITHUB_SHA:0:12}"
+            printf -- '- **Tải trực tiếp `.apk`:** [kinshield-mobile-preview.apk](%s)\n' "$download_url"
+            printf -- '- **Trang GitHub Release:** [preview-latest](%s)\n' "$release_url"
           } >> "$GITHUB_STEP_SUMMARY"
