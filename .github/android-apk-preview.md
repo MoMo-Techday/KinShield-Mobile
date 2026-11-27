@@ -6,33 +6,26 @@ package `click.kinshield.mobile.preview`.
 
 ## Chuẩn bị khóa ký một lần
 
-Workflow dùng lại `EXPO_TOKEN` và `EXPO_PROJECT_ID` của [Expo Go preview](expo-go-preview.md).
+Workflow dùng secret `EXPO_TOKEN` (tạo tại [Expo access tokens](https://docs.expo.dev/accounts/programmatic-access/)).
 Trước lần chạy đầu, dùng tài khoản Expo có quyền quản lý project để tạo hoặc
 chọn keystore Android cho profile `preview`. Chạy trong thư mục `KinShield-Mobile`:
 
 ```powershell
 npm ci
 npx eas-cli@27.11.0 login
-npx eas-cli@27.11.0 project:init --id <EXPO_PROJECT_ID> --no-icon
 npx eas-cli@27.11.0 credentials:configure-build --platform android --profile preview
 ```
 
-Thay `<EXPO_PROJECT_ID>` bằng UUID project `kinshield-mobile` của MoMo Techday.
 Chọn keystore có sẵn nếu đã tạo cho package này, hoặc chọn tạo keystore mới nếu
 chưa có. Expo lưu keystore để các lần build sau dùng lại cùng khóa ký.
-Lệnh `project:init` có thể ghi liên kết project vào `app.json` trên máy chạy lệnh.
 
 ## Tải APK
 
-1. Vào **GitHub → Actions → Android APK preview → Summary**.
-2. Bấm **Theo dõi build và tải APK khi hoàn tất**. GitHub báo xanh khi Expo đã
-   nhận yêu cầu, còn trạng thái biên dịch nằm trên trang EAS Build.
-3. Khi EAS báo **Finished**, tải và cài file APK trên Android.
+1. Vào **GitHub → Actions → Android APK preview**.
+2. Mở log bước **Build Android APK via EAS** để lấy link trang EAS Build và link tải trực tiếp file `.apk`.
+3. Tải và cài file APK trên điện thoại Android.
 
 Có thể dùng **Run workflow** trên `main` để gửi lại yêu cầu build. Mỗi APK
-dùng một lượt EAS Build. iOS tiếp tục quét QR từ workflow **Expo Go preview**.
+dùng một lượt EAS Build.
 
 APK mặc định dùng các endpoint khai báo trong profile `preview` của `eas.json`.
-Để đổi chúng cho các bản build từ GitHub, đặt repository variable
-`EXPO_PUBLIC_API_URL` hoặc `EXPO_PUBLIC_WS_URL`. Workflow chuyển các giá trị
-đã đặt vào profile build để máy build Expo nhận được chúng.
