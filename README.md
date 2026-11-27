@@ -44,4 +44,10 @@ Dự án **KinShield** được tổ chức theo kiến trúc tách dịch vụ 
 
 ---
 
+## Giấy phép
+
+Phát hành theo giấy phép [MIT License](./LICENSE).
+
+---
+
 *KinShield — Khiên Gia Đình • Dự án tham gia giải **MoMo TechDay 2026**.*
