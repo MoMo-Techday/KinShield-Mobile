@@ -11,11 +11,20 @@
     "scheme": "kinshieldmobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "click.kinshield.mobile.preview",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Cho phép KinShield sử dụng nhận dạng giọng nói khi bạn chủ động bật theo dõi cuộc gọi.",
+        "NSMicrophoneUsageDescription": "KinShield cần quyền micro để nhận dạng lời nói khi bạn chủ động bật bảo vệ cuộc gọi. Âm thanh có thể được dịch vụ nhận dạng của thiết bị xử lý; KinShield chỉ nhận văn bản đã che thông tin nhạy cảm.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "click.kinshield.mobile.preview",
-      "permissions": ["android.permission.READ_PHONE_STATE"],
+      "permissions": [
+        "android.permission.READ_PHONE_STATE",
+        "android.permission.RECORD_AUDIO"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -49,7 +58,15 @@
           ]
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "KinShield cần quyền micro để nhận dạng lời nói khi bạn chủ động bật bảo vệ cuộc gọi. Âm thanh có thể được dịch vụ nhận dạng của thiết bị xử lý; KinShield chỉ nhận văn bản đã che thông tin nhạy cảm.",
+          "enableBackgroundRecording": false,
+          "enableBackgroundPlayback": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
