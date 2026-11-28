@@ -1,4 +1,4 @@
-// Bộ giải mã VietQR (EMVCo TLV) chạy offline ngay trên điện thoại + 4 mẫu thử nhanh.
+// Bộ giải mã VietQR (EMVCo TLV) chạy offline ngay trên điện thoại.
 import type { XRayVietQr } from '@/features/xray/types/xray';
 
 const NAPAS_BANK_BINS: Record<string, string> = {
@@ -19,6 +19,8 @@ const NAPAS_BANK_BINS: Record<string, string> = {
     '970426': 'MSB',
     '970431': 'Eximbank',
     '970440': 'SeABank',
+    '970428': 'Nam A Bank',
+    '970449': 'LPBank',
     '970454': 'BVBank / Timo',
     '971005': 'Ví MoMo (NAPAS)',
 };
@@ -102,30 +104,3 @@ export function parseMobileVietQr(raw: string): XRayVietQr | null {
         isDynamic: root['01'] === '12',
     };
 }
-
-export const XRAY_DEMO_PRESETS = [
-    {
-        id: 'apk',
-        label: 'Giả VNeID .apk',
-        text: 'Cán bộ thông báo CCCD của bác chưa đồng bộ. Cài ngay tệp VNeID-update.apk trong 15 phút và tuyệt đối không kể với con cái.',
-        url: 'https://dichvucong-vneid.top/VNeID-update.apk',
-    },
-    {
-        id: 'shipper',
-        label: 'Shipper đòi OTP',
-        text: 'Cháu giao hàng bấm nhầm đăng ký gói hội viên 3,5 triệu/tháng. Cô bấm link nhập mật khẩu và đọc 6 số OTP để hủy ngay ạ.',
-        url: 'https://m0mo-hoantien-huygoi.xyz/login',
-    },
-    {
-        id: 'vietqr',
-        label: 'Cọc VietQR lạ',
-        text: 'Chuyển cọc gấp giữ phòng trong 10 phút qua mã VietQR: 00020101021238540010A00000072701240006970436011001234567890208QRIBFTTA5303704540750000005802VN62150811COC PHONG 163043188',
-        url: '',
-    },
-    {
-        id: 'safe',
-        label: 'Tin nhắn an toàn',
-        text: 'Chiều nay 6 giờ con ghé nhà ăn cơm với ba mẹ nhé, con có mua sẵn trái cây rồi ạ.',
-        url: 'https://momo.vn',
-    },
-] as const;

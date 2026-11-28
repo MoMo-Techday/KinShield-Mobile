@@ -31,10 +31,7 @@ import {
     readSharedImageAsBase64,
     type AllowedXRayImageMime,
 } from '@/features/xray/utils/image-helpers';
-import {
-    parseMobileVietQr,
-    XRAY_DEMO_PRESETS,
-} from '@/features/xray/utils/vietqr';
+import { parseMobileVietQr } from '@/features/xray/utils/vietqr';
 import { getApiErrorMessage } from '@/lib/api/api-error';
 import { THEME } from '@/lib/theme';
 
@@ -325,51 +322,9 @@ export function XRayScannerScreen() {
                                 </View>
                             )}
 
-                            <View className="gap-2">
-                                <Text className="text-xs font-bold text-muted-foreground">
-                                    Thử nhanh kịch bản phổ biến
-                                </Text>
-                                <View className="flex-row flex-wrap gap-2">
-                                    {XRAY_DEMO_PRESETS.map((preset) => (
-                                        <Button
-                                            key={preset.id}
-                                            variant="secondary"
-                                            size="sm"
-                                            className="rounded-full"
-                                            onPress={() => {
-                                                setText(preset.text);
-                                                setUrl(preset.url);
-                                                setSourceNotice(null);
-                                                analyzeMutation.reset();
-                                            }}
-                                        >
-                                            <Text className="text-xs font-bold text-secondary-foreground">
-                                                {preset.label}
-                                            </Text>
-                                        </Button>
-                                    ))}
-                                </View>
-                            </View>
-
                             <View className="gap-1.5">
                                 <Text className="text-sm font-semibold text-foreground">
-                                    Nội dung tin nhắn hoặc chuỗi VietQR
-                                </Text>
-                                <Input
-                                    testID="xray-text-input"
-                                    value={text}
-                                    onChangeText={setText}
-                                    multiline
-                                    numberOfLines={4}
-                                    textAlignVertical="top"
-                                    placeholder="Dán tin nhắn Zalo, SMS hoặc quét mã VietQR..."
-                                    className="h-28 rounded-2xl py-3"
-                                />
-                            </View>
-
-                            <View className="gap-1.5">
-                                <Text className="text-sm font-semibold text-foreground">
-                                    Đường dẫn web / tệp .apk (tùy chọn)
+                                    Đường dẫn web / tệp .apk
                                 </Text>
                                 <Input
                                     testID="xray-url-input"
@@ -379,7 +334,23 @@ export function XRayScannerScreen() {
                                     autoCorrect={false}
                                     keyboardType="url"
                                     placeholder="https://..."
-                                    className="h-12 rounded-2xl"
+                                    className="h-12 rounded-xl"
+                                />
+                            </View>
+
+                            <View className="gap-1.5">
+                                <Text className="text-sm font-semibold text-foreground">
+                                    Nội dung tin nhắn hoặc mã VietQR (tùy chọn)
+                                </Text>
+                                <Input
+                                    testID="xray-text-input"
+                                    value={text}
+                                    onChangeText={setText}
+                                    multiline
+                                    numberOfLines={3}
+                                    textAlignVertical="top"
+                                    placeholder="Dán tin nhắn nghi ngờ hoặc quét mã VietQR..."
+                                    className="h-24 rounded-xl py-3"
                                 />
                             </View>
 
