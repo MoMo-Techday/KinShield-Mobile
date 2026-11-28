@@ -33,12 +33,13 @@ object KinShieldChatGuardStore {
     private val lastFingerprints = LinkedHashMap<String, Long>()
 
     private val combiningMarksRegex = Regex("\\p{InCombiningDiacriticalMarks}+")
-    private val apkOrVneidRegex = Regex("(\\.apk\\b|dichvucong|vneid|cap nhat dinh danh)")
+    private val apkOrVneidRegex = Regex("(\\.apk\\b|dichvucong|vneid|cap nhat dinh danh|cai dat ung dung)")
     private val otpRegex = Regex("(\\botp\\b|ma xac thuc|mat khau|ma pin|6 so|chia se man hinh)")
-    private val suspiciousDomainRegex = Regex("(\\.(xyz|top|tk|vip|buzz|icu)\\b|m0mo|evn-|vneid-|hoantien|nhantien|trungthuong)")
+    private val suspiciousDomainRegex = Regex("(\\.(xyz|top|tk|vip|buzz|icu)\\b|(bit\\.ly|tinyurl\\.com|cutt\\.ly|bom\\.so|rb\\.gy|is\\.gd)/|m0mo|evn-|vneid-|hoantien|nhantien|trungthuong)")
     private val vietQrRegex = Regex("000201\\d{10,}")
-    private val authorityRegex = Regex("(cong an|canh sat|vien kiem sat|toa an|bo cong an|dien luc|\\bevn\\b|cat dien|shipper|khoa tai khoan)")
-    private val pressureMoneyRegex = Regex("(chuyen khoan|chuyen tien|tam giu|no tien|2 gio|15 phut|30 phut|khan cap|http://|https://|bam link|nhan link|tai khoan ca nhan)")
+    private val directScamPhraseRegex = Regex("(cat dien|no tien dien|chuyen khoan gap|chuyen tien gap|chuyen gap|tai khoan bi khoa|khoa tai khoan|nhan qua tri an|trung thuong|tam giu tien|lenh bat)")
+    private val authorityRegex = Regex("(cong an|canh sat|vien kiem sat|toa an|bo cong an|dien luc|\\bevn\\b|shipper|ngan hang|momo)")
+    private val pressureMoneyRegex = Regex("(chuyen khoan|chuyen tien|chuyen coc|tam giu|no tien|2 gio|15 phut|30 phut|khan cap|http://|https://|bam link|nhan link|tai khoan ca nhan|phi ship)")
 
     fun attachReactContext(context: ReactApplicationContext) {
         reactContextRef = WeakReference(context)
@@ -65,7 +66,9 @@ object KinShieldChatGuardStore {
         if (vietQrRegex.containsMatchIn(norm)) {
             reasons.add("Phát hiện chuỗi mã thanh toán VietQR cần kiểm tra")
         }
-        if (authorityRegex.containsMatchIn(norm) && pressureMoneyRegex.containsMatchIn(norm)) {
+        if (directScamPhraseRegex.containsMatchIn(norm)) {
+            reasons.add("Phát hiện kịch bản đe dọa cắt dịch vụ, khóa tài khoản hoặc giục chuyển tiền gấp")
+        } else if (authorityRegex.containsMatchIn(norm) && pressureMoneyRegex.containsMatchIn(norm)) {
             reasons.add("Nghi giả danh cơ quan/dịch vụ gây áp lực chuyển tiền")
         }
 

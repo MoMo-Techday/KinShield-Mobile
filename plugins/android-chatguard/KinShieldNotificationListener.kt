@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import androidx.core.app.NotificationCompat
@@ -35,14 +36,11 @@ class KinShieldNotificationListener : NotificationListenerService() {
         val appName = MONITORED_APPS[pkg] ?: return
 
         val notification = sbn.notification ?: return
-        if ((notification.flags and Notification.FLAG_GROUP_SUMMARY) != 0) return
-
         val extras = notification.extras ?: return
-        val sender = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim().orEmpty()
-        val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()?.trim().orEmpty()
-        val shortText = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim().orEmpty()
-        val body = if (bigText.length >= shortText.length) bigText else shortText
-        if (body.length < 6) return
+
+        val sender = extractSender(extras, appName)
+        val body = extractMessageBody(extras)
+        if (body.length < 4) return
 
         val combined = if (sender.isNotEmpty()) "$sender: $body" else body
         val nowMs = System.currentTimeMillis()
@@ -61,6 +59,48 @@ class KinShieldNotificationListener : NotificationListenerService() {
         )
 
         showHeadsUpWarning(record)
+    }
+
+    private fun extractSender(extras: Bundle, fallback: String): String {
+        val convTitle = extras.getCharSequence(Notification.EXTRA_CONVERSATION_TITLE)?.toString()?.trim().orEmpty()
+        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim().orEmpty()
+        if (title.isNotEmpty()) return title
+        if (convTitle.isNotEmpty()) return convTitle
+        return fallback
+    }
+
+    private fun extractMessageBody(extras: Bundle): String {
+        val candidates = mutableListOf<String>()
+
+        // 1. MessagingStyle (Zalo / Messenger / SMS đời mới Android 12-15 lưu tin nhắn ở EXTRA_MESSAGES)
+        @Suppress("DEPRECATION")
+        val rawMessages = extras.getParcelableArray(Notification.EXTRA_MESSAGES)
+        if (rawMessages != null && rawMessages.isNotEmpty()) {
+            val messageTexts = rawMessages.mapNotNull { item ->
+                (item as? Bundle)?.getCharSequence("text")?.toString()?.trim()
+            }.filter { it.isNotEmpty() }
+            if (messageTexts.isNotEmpty()) {
+                candidates.add(messageTexts.takeLast(3).joinToString(" "))
+            }
+        }
+
+        // 2. InboxStyle (nhiều tin nhắn gộp dòng trên Samsung/Zalo)
+        val textLines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)
+        if (textLines != null && textLines.isNotEmpty()) {
+            val joined = textLines.mapNotNull { it?.toString()?.trim() }
+                .filter { it.isNotEmpty() }
+                .takeLast(3)
+                .joinToString(" ")
+            if (joined.isNotEmpty()) candidates.add(joined)
+        }
+
+        // 3. BigText / Standard Text
+        extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()?.trim()
+            ?.takeIf { it.isNotEmpty() }?.let { candidates.add(it) }
+        extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim()
+            ?.takeIf { it.isNotEmpty() }?.let { candidates.add(it) }
+
+        return candidates.maxByOrNull { it.length }.orEmpty()
     }
 
     private fun showHeadsUpWarning(record: ChatAlertRecord) {

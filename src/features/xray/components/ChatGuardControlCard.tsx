@@ -111,7 +111,7 @@ export function ChatGuardControlCard() {
             } else {
                 const started = await startFloatingShield();
                 if (started) {
-                    toast.success('Đã bật Nút Khiên nổi "Soi AI" ở mép màn hình!');
+                    toast.success('Đã bật Nút Khiên nổi KinShield ở mép màn hình!');
                 } else {
                     await openOverlaySettings();
                 }
@@ -194,7 +194,7 @@ export function ChatGuardControlCard() {
                                 Nút Khiên nổi 1 chạm (Soi ảnh Zalo / QR)
                             </Text>
                             <Text className="text-xs leading-4 text-muted-foreground">
-                                Hiện nút &ldquo;Soi AI&rdquo; bên mép màn hình — chạm 1 cái để chụp nhanh và soi ngay.
+                                Hiện biểu tượng Khiên KinShield bên mép màn hình — chạm 1 cái để chụp nhanh và soi ngay.
                             </Text>
                         </View>
                         <View

@@ -132,6 +132,23 @@ function withChatGuardSources(config) {
       for (const file of entries) {
         fs.copyFileSync(path.join(srcDir, file), path.join(destDir, file));
       }
+
+      const floatingLogoSrc = path.join(srcDir, 'kinshield_floating_logo.png');
+      if (fs.existsSync(floatingLogoSrc)) {
+        const drawableDir = path.join(
+          mod.modRequest.platformProjectRoot,
+          'app',
+          'src',
+          'main',
+          'res',
+          'drawable-nodpi',
+        );
+        fs.mkdirSync(drawableDir, { recursive: true });
+        fs.copyFileSync(
+          floatingLogoSrc,
+          path.join(drawableDir, 'kinshield_floating_logo.png'),
+        );
+      }
       return mod;
     },
   ]);

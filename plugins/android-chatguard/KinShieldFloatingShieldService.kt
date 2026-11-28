@@ -12,7 +12,6 @@ import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.graphics.Color
 import android.graphics.PixelFormat
-import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
@@ -20,13 +19,12 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.provider.Settings
-import android.util.TypedValue
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
-import android.widget.LinearLayout
-import android.widget.TextView
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import kotlin.math.abs
@@ -145,28 +143,37 @@ class KinShieldFloatingShieldService : Service() {
         val screenWidth = resources.displayMetrics.widthPixels
         val screenHeight = resources.displayMetrics.heightPixels
 
-        val container = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            val padH = (12 * density).toInt()
-            val padV = (9 * density).toInt()
-            setPadding(padH, padV, padH, padV)
+        val bubbleSize = (54 * density).toInt()
+        val iconPad = (9 * density).toInt()
+
+        val container = FrameLayout(this).apply {
+            setPadding(iconPad, iconPad, iconPad, iconPad)
             background = GradientDrawable().apply {
-                shape = GradientDrawable.RECTANGLE
-                cornerRadius = 26 * density
-                setColor(Color.parseColor("#C82775"))
-                setStroke((1.5f * density).toInt(), Color.parseColor("#FFFFFF"))
+                shape = GradientDrawable.OVAL
+                setColor(Color.WHITE)
+                setStroke((2f * density).toInt(), Color.parseColor("#C82775"))
             }
             elevation = 10 * density
         }
 
-        val label = TextView(this).apply {
-            text = "Soi AI"
-            setTextColor(Color.WHITE)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
-            setTypeface(typeface, Typeface.BOLD)
+        val logoResId = resources.getIdentifier("kinshield_floating_logo", "drawable", packageName)
+        val iconView = ImageView(this).apply {
+            if (logoResId != 0) {
+                setImageResource(logoResId)
+            } else {
+                setImageDrawable(packageManager.getApplicationIcon(packageName))
+            }
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            contentDescription = "KinShield Soi nhanh AI"
         }
-        container.addView(label)
+        container.addView(
+            iconView,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                Gravity.CENTER,
+            ),
+        )
 
         val overlayType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -176,14 +183,14 @@ class KinShieldFloatingShieldService : Service() {
         }
 
         val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
+            bubbleSize,
+            bubbleSize,
             overlayType,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = screenWidth - (92 * density).toInt()
+            x = screenWidth - bubbleSize - (8 * density).toInt()
             y = (screenHeight * 0.42f).toInt()
         }
         layoutParams = params
