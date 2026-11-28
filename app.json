@@ -11,6 +11,7 @@
     "scheme": "kinshield",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "bundleIdentifier": "click.kinshield.mobile",
       "supportsTablet": false,
       "icon": "./assets/expo.icon",
       "infoPlist": {
@@ -23,7 +24,6 @@
       "package": "click.kinshield.mobile",
       "allowBackup": false,
       "blockedPermissions": [
-        "android.permission.RECORD_AUDIO",
         "android.permission.SYSTEM_ALERT_WINDOW"
       ],
       "permissions": [

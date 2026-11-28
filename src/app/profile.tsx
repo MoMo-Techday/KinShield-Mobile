@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
+    Image,
     KeyboardAvoidingView,
     Linking,
     Platform,
@@ -32,6 +33,7 @@ import {
 } from '@/features/profile/components/MobileBottomNav';
 import { MobileShieldHubTab } from '@/features/profile/components/MobileShieldHubTab';
 import { MobileUserMenuSheet } from '@/features/profile/components/MobileUserMenuSheet';
+import { MOBILE_ILLUSTRATIONS } from '@/features/profile/constants/illustrations';
 import { ProfilePreferencesSection } from '@/features/profile/components/ProfilePreferencesSection';
 import { ProfileSafetyContactsCard } from '@/features/profile/components/ProfileSafetyContactsCard';
 import { useMobileProfileExtras } from '@/features/profile/hooks/use-profile-extras';
@@ -158,15 +160,17 @@ function ProfileHub({
         {
             id: 'l1',
             layer: 'Lớp 1',
+            image: MOBILE_ILLUSTRATIONS.layerXray,
             title: 'Soi 1 chạm X-Ray',
             status: 'Sẵn sàng kiểm tra',
-            detail: 'Soi ảnh bill, mã VietQR & tin nhắn nghi ngờ',
+            detail: 'Soi ảnh bill, mã VietQR & link nghi ngờ',
             active: true,
             onPress: () => router.push('/xray'),
         },
         {
             id: 'l2',
             layer: 'Lớp 2',
+            image: MOBILE_ILLUSTRATIONS.layerVoice,
             title: 'Cảnh báo cuộc gọi',
             status: extras.preferences.voiceAlertsEnabled
                 ? 'Đang bật loa Việt'
@@ -182,6 +186,7 @@ function ProfileHub({
         {
             id: 'l3',
             layer: 'Lớp 3',
+            image: MOBILE_ILLUSTRATIONS.layerCosign,
             title: 'Vòng tròn Gia đình',
             status: extras.preferences.coSignAlertEnabled
                 ? `Ngưỡng ${formatVnd(extras.preferences.coSignThresholdVnd)}`
@@ -252,8 +257,16 @@ function ProfileHub({
                         {/* TAB 1: TỔNG QUAN (Matches Web /app/general) */}
                         {tab === 'overview' && (
                             <>
-                                {/* Welcome + Safety Score Card */}
-                                <Card className="gap-0 rounded-2xl border-border bg-card py-0">
+                                {/* Welcome + Subtle Family Banner + Safety Score Card */}
+                                <Card className="gap-0 overflow-hidden rounded-2xl border-border bg-card py-0">
+                                    <Image
+                                        source={
+                                            MOBILE_ILLUSTRATIONS.heroFamily
+                                        }
+                                        className="h-32 w-full bg-secondary"
+                                        resizeMode="cover"
+                                        accessibilityLabel="Minh họa gia đình KinShield an toàn"
+                                    />
                                     <CardContent className="gap-4 px-5 py-5">
                                         <View className="flex-row items-center gap-4">
                                             <Pressable
@@ -374,36 +387,44 @@ function ProfileHub({
                                         <Pressable
                                             key={item.id}
                                             onPress={item.onPress}
-                                            className="rounded-2xl border border-border bg-card p-4 active:opacity-85"
+                                            className="flex-row items-center gap-3.5 rounded-2xl border border-border bg-card p-3.5 active:opacity-85"
                                         >
-                                            <View className="flex-row items-center justify-between gap-2">
-                                                <Text className="text-sm font-bold text-foreground">
-                                                    {item.title}
-                                                </Text>
-                                                <View
-                                                    className={`rounded-md px-2 py-0.5 ${
-                                                        item.active
-                                                            ? 'bg-success'
-                                                            : 'bg-warning'
-                                                    }`}
-                                                >
-                                                    <Text
-                                                        className={`text-[11px] font-semibold ${
+                                            <Image
+                                                source={item.image}
+                                                className="size-16 rounded-xl bg-secondary"
+                                                resizeMode="cover"
+                                                accessibilityLabel={`Minh họa ${item.title}`}
+                                            />
+                                            <View className="flex-1">
+                                                <View className="flex-row items-center justify-between gap-2">
+                                                    <Text className="text-sm font-bold text-foreground">
+                                                        {item.title}
+                                                    </Text>
+                                                    <View
+                                                        className={`rounded-md px-2 py-0.5 ${
                                                             item.active
-                                                                ? 'text-success-foreground'
-                                                                : 'text-warning-foreground'
+                                                                ? 'bg-success'
+                                                                : 'bg-warning'
                                                         }`}
                                                     >
-                                                        {item.layer}
-                                                    </Text>
+                                                        <Text
+                                                            className={`text-[11px] font-semibold ${
+                                                                item.active
+                                                                    ? 'text-success-foreground'
+                                                                    : 'text-warning-foreground'
+                                                            }`}
+                                                        >
+                                                            {item.layer}
+                                                        </Text>
+                                                    </View>
                                                 </View>
+                                                <Text className="mt-0.5 text-xs font-semibold text-primary">
+                                                    {item.status}
+                                                </Text>
+                                                <Text className="mt-0.5 text-xs leading-4 text-muted-foreground">
+                                                    {item.detail}
+                                                </Text>
                                             </View>
-                                            <Text className="mt-1 text-xs font-semibold text-primary">
-                                                {item.status}
-                                            </Text>
-                                            <Text className="mt-1 text-xs leading-4 text-muted-foreground">
-                                                {item.detail}
-                                            </Text>
                                         </Pressable>
                                     ))}
                                 </View>

@@ -1,5 +1,5 @@
 // Tab Cẩm nang chống lừa đảo trên Mobile: Checklist 5 nguyên tắc vàng + 4 kịch bản lừa đảo phổ biến tại Việt Nam.
-import { Pressable, View } from 'react-native';
+import { Image, Pressable, View } from 'react-native';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -9,6 +9,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
+import { MOBILE_ILLUSTRATIONS } from '@/features/profile/constants/illustrations';
 import { GOLDEN_SAFETY_RULES } from '@/features/profile/utils/profile-extras';
 
 interface MobileAcademyTabProps {
@@ -22,6 +23,7 @@ interface MobileAcademyTabProps {
 const SCAM_PLAYBOOKS = [
     {
         id: 'police',
+        image: MOBILE_ILLUSTRATIONS.scenarioPolice,
         tag: 'Giả Công an / VNeID',
         headline: 'Gọi video mặc sắc phục, dọa phong tỏa tài khoản',
         signs: [
@@ -35,6 +37,7 @@ const SCAM_PLAYBOOKS = [
     },
     {
         id: 'shipper',
+        image: MOBILE_ILLUSTRATIONS.scenarioShipper,
         tag: 'Giả Shipper giao hàng',
         headline: 'Báo đơn hàng gửi về quê, giục chuyển khoản gấp',
         signs: [
@@ -47,6 +50,7 @@ const SCAM_PLAYBOOKS = [
     },
     {
         id: 'utility',
+        image: MOBILE_ILLUSTRATIONS.scenarioBill,
         tag: 'Giả hóa đơn Điện / Nước',
         headline: 'Dọa cắt điện trong 2 giờ nếu không quét mã QR ngay',
         signs: [
@@ -59,6 +63,7 @@ const SCAM_PLAYBOOKS = [
     },
     {
         id: 'deepvoice',
+        image: MOBILE_ILLUSTRATIONS.scenarioDeepvoice,
         tag: 'Giả giọng người thân (AI)',
         headline: 'Cuộc gọi chập chờn giọng giống con cháu báo tai nạn gấp',
         signs: [
@@ -149,9 +154,15 @@ export function MobileAcademyTab({
                 {SCAM_PLAYBOOKS.map((item) => (
                     <Card
                         key={item.id}
-                        className="gap-0 rounded-2xl border-border bg-card py-0"
+                        className="gap-0 overflow-hidden rounded-2xl border-border bg-card py-0"
                     >
-                        <CardHeader className="gap-1.5 px-5 pt-5">
+                        <Image
+                            source={item.image}
+                            className="h-36 w-full bg-secondary"
+                            resizeMode="cover"
+                            accessibilityLabel={`Minh họa ${item.tag}`}
+                        />
+                        <CardHeader className="gap-1.5 px-5 pt-4">
                             <View className="self-start rounded-md bg-accent px-2.5 py-0.5">
                                 <Text className="text-[11px] font-bold text-accent-foreground">
                                     {item.tag}

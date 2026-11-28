@@ -96,7 +96,7 @@ function parseCallAnalysis(value: unknown): CallAnalysisEvent | null {
     };
 }
 
-export function splitCallTranscript(text: string): string[] {
+function splitCallTranscript(text: string): string[] {
     const chunks: string[] = [];
     let current = '';
     for (const point of text) {

@@ -1,5 +1,5 @@
 // Tab Bảo vệ 3 lớp trên Mobile: Soi 1 chạm X-Ray, Cảnh báo cuộc gọi, Vòng tròn Gia đình & công tắc bảo vệ đồng bộ Core.
-import { Linking, Pressable, View } from 'react-native';
+import { Image, Linking, Pressable, View } from 'react-native';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -9,6 +9,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
+import { MOBILE_ILLUSTRATIONS } from '@/features/profile/constants/illustrations';
 import {
     formatVnd,
     THRESHOLD_OPTIONS_VND,
@@ -73,23 +74,33 @@ export function MobileShieldHubTab({
                 </CardHeader>
 
                 <CardContent className="gap-3 px-5 pb-5 pt-4">
-                    <View className="gap-2 rounded-xl border border-border bg-background p-4">
-                        <View className="flex-row items-center justify-between">
-                            <Text className="text-sm font-bold text-foreground">
-                                Lớp 1 · Soi 1 chạm X-Ray
-                            </Text>
-                            <View className="rounded-md bg-success px-2 py-0.5">
-                                <Text className="text-[11px] font-semibold text-success-foreground">
-                                    Sẵn sàng
+                    <View className="gap-3 rounded-xl border border-border bg-background p-3.5">
+                        <View className="flex-row items-center gap-3">
+                            <Image
+                                source={MOBILE_ILLUSTRATIONS.layerXray}
+                                className="size-16 rounded-xl"
+                                resizeMode="cover"
+                                accessibilityLabel="Minh họa Soi 1 chạm X-Ray"
+                            />
+                            <View className="flex-1 gap-1">
+                                <View className="flex-row items-center justify-between gap-2">
+                                    <Text className="text-sm font-bold text-foreground">
+                                        Lớp 1 · Soi 1 chạm X-Ray
+                                    </Text>
+                                    <View className="rounded-md bg-success px-2 py-0.5">
+                                        <Text className="text-[11px] font-semibold text-success-foreground">
+                                            Sẵn sàng
+                                        </Text>
+                                    </View>
+                                </View>
+                                <Text className="text-xs leading-4 text-muted-foreground">
+                                    Chụp ảnh bill, quét mã VietQR, dán link hoặc
+                                    chia sẻ từ Zalo để AI soi lừa đảo.
                                 </Text>
                             </View>
                         </View>
-                        <Text className="text-xs leading-5 text-muted-foreground">
-                            Chụp ảnh bill, quét mã VietQR, dán tin nhắn hoặc
-                            chia sẻ trực tiếp từ Zalo để AI soi lừa đảo.
-                        </Text>
                         <Button
-                            className="mt-1 h-11 w-full rounded-xl"
+                            className="h-11 w-full rounded-xl"
                             onPress={onOpenXRay}
                         >
                             <Text className="font-bold text-primary-foreground">
@@ -98,25 +109,35 @@ export function MobileShieldHubTab({
                         </Button>
                     </View>
 
-                    <View className="gap-2 rounded-xl border border-border bg-background p-4">
-                        <View className="flex-row items-center justify-between">
-                            <Text className="text-sm font-bold text-foreground">
-                                Lớp 3 · Vòng tròn Gia đình
-                            </Text>
-                            <View className="rounded-md bg-secondary px-2 py-0.5">
-                                <Text className="text-[11px] font-semibold text-secondary-foreground">
-                                    {emergencyContacts.length} số ·{' '}
-                                    {trustedAccountsCount} STK
+                    <View className="gap-3 rounded-xl border border-border bg-background p-3.5">
+                        <View className="flex-row items-center gap-3">
+                            <Image
+                                source={MOBILE_ILLUSTRATIONS.layerCosign}
+                                className="size-16 rounded-xl"
+                                resizeMode="cover"
+                                accessibilityLabel="Minh họa Vòng tròn Gia đình"
+                            />
+                            <View className="flex-1 gap-1">
+                                <View className="flex-row items-center justify-between gap-2">
+                                    <Text className="text-sm font-bold text-foreground">
+                                        Lớp 3 · Vòng tròn Gia đình
+                                    </Text>
+                                    <View className="rounded-md bg-secondary px-2 py-0.5">
+                                        <Text className="text-[11px] font-semibold text-secondary-foreground">
+                                            {emergencyContacts.length} số ·{' '}
+                                            {trustedAccountsCount} STK
+                                        </Text>
+                                    </View>
+                                </View>
+                                <Text className="text-xs leading-4 text-muted-foreground">
+                                    Ghép đôi người bảo vệ, theo dõi cuộc gọi và
+                                    đồng duyệt giao dịch lớn.
                                 </Text>
                             </View>
                         </View>
-                        <Text className="text-xs leading-5 text-muted-foreground">
-                            Ghép đôi người bảo vệ và gửi yêu cầu đồng duyệt
-                            trước khi chuyển khoản số tiền lớn.
-                        </Text>
                         <Button
                             variant="outline"
-                            className="mt-1 h-11 w-full rounded-xl"
+                            className="h-11 w-full rounded-xl"
                             onPress={onOpenFamily}
                         >
                             <Text className="font-bold text-foreground">
@@ -129,13 +150,21 @@ export function MobileShieldHubTab({
 
             {/* Layer 2 & 3 Protection Switches (Synced with Core) */}
             <Card className="gap-0 rounded-2xl border-border bg-card py-0">
-                <CardHeader className="gap-1 px-5 pt-5">
-                    <CardTitle className="text-lg font-bold text-foreground">
-                        Cấu hình cảnh báo cuộc gọi &amp; đồng duyệt
-                    </CardTitle>
-                    <CardDescription className={bodyClass}>
-                        Các công tắc này tự động đồng bộ giữa điện thoại và Web.
-                    </CardDescription>
+                <CardHeader className="flex-row items-center gap-3 px-5 pt-5">
+                    <Image
+                        source={MOBILE_ILLUSTRATIONS.layerVoice}
+                        className="size-12 rounded-xl"
+                        resizeMode="cover"
+                        accessibilityLabel="Minh họa Bảo vệ cuộc gọi"
+                    />
+                    <View className="flex-1 gap-0.5">
+                        <CardTitle className="text-base font-bold text-foreground">
+                            Cảnh báo cuộc gọi &amp; Đồng duyệt
+                        </CardTitle>
+                        <CardDescription className="text-xs">
+                            Đồng bộ tự động giữa điện thoại và Web.
+                        </CardDescription>
+                    </View>
                 </CardHeader>
 
                 <CardContent className="gap-3 px-5 pb-5 pt-4">

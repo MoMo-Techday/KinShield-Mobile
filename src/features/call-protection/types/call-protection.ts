@@ -3,12 +3,6 @@ export type CallStarted = {
     nextSequence: number;
 };
 
-export type CallChunkRequest = {
-    sessionId: string;
-    sequence: number;
-    transcriptChunk: string;
-};
-
 export type CallAnalysisLevel = 'SAFE' | 'WARN' | 'BLOCK' | 'LOCKDOWN';
 export type CallAlertStatus = 'not_requested' | 'confirmed' | 'unconfirmed';
 export type CallAudioStatus = 'not_requested' | 'available' | 'unavailable';
