@@ -1,6 +1,13 @@
 // Màn hình Soi 1 chạm X-Ray (Lớp 1): chọn/chụp ảnh bill, quét mã QR, nhận chia sẻ từ Zalo hoặc dán tin nhắn.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, View } from 'react-native';
+import {
+    ActivityIndicator,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
@@ -207,9 +214,18 @@ export function XRayScannerScreen() {
 
     return (
         <SafeAreaView className="flex-1 bg-background" edges={['bottom']}>
-            <ScrollView contentContainerClassName="px-5 py-6">
-                <View className="mx-auto w-full max-w-[520px] gap-5">
-                    <Card className="gap-0 rounded-[28px] border-border bg-card py-0 shadow-xl shadow-primary/[0.06]">
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
+                className="flex-1"
+            >
+                <ScrollView
+                    keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="on-drag"
+                    contentContainerClassName="px-5 py-5 pb-10"
+                >
+                    <View className="mx-auto w-full max-w-[520px] gap-4">
+                        <Card className="gap-0 rounded-2xl border-border bg-card py-0">
                         <CardHeader className="gap-2 px-6 pt-6">
                             <Text className="text-xs font-extrabold uppercase tracking-[2px] text-primary">
                                 Lớp 1 • Soi 1 chạm X-Ray
@@ -448,7 +464,8 @@ export function XRayScannerScreen() {
                         />
                     )}
                 </View>
-            </ScrollView>
+                </ScrollView>
+            </KeyboardAvoidingView>
 
             <QrCameraModal
                 visible={qrModalVisible}

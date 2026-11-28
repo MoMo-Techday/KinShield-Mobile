@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "kinshield-mobile",
+    "name": "KinShield",
     "slug": "kinshield-mobile",
     "version": "1.0.0",
     "runtimeVersion": {
@@ -8,20 +8,31 @@
     },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "kinshieldmobile",
+    "scheme": "kinshield",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "bundleIdentifier": "click.kinshield.mobile",
+      "supportsTablet": false,
+      "icon": "./assets/expo.icon",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "package": "click.kinshield.mobile.preview",
+      "package": "click.kinshield.mobile",
+      "allowBackup": false,
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "output": "server",
@@ -33,7 +44,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#C82775",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
@@ -57,7 +68,7 @@
         {
           "iosActivationRules": {
             "NSExtensionActivationSupportsText": true,
-            "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
+            "NSExtensionActivationSupportsWebURLWithMaxCount": true,
             "NSExtensionActivationSupportsImageWithMaxCount": 1
           },
           "androidIntentFilters": [

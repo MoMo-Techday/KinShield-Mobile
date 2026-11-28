@@ -31,6 +31,14 @@ export default function RootLayout() {
                         <ShareIntentRedirectBridge />
                         <Stack>
                             <Stack.Screen
+                                name="index"
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="profile"
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
                                 name="family"
                                 options={{ title: 'Gia đình' }}
                             />
