@@ -7,29 +7,24 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: android-apk-preview-main
+  cancel-in-progress: true
 
 jobs:
-  enqueue:
+  build-apk:
+    name: Build KinShield Android APK & Publish Release
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
-      EAS_CLI_VERSION: "27.11.0"
-      EXPO_PROJECT_ID: ${{ vars.EXPO_PROJECT_ID }}
+      EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL || 'https://api-core.kinshield.click/api' }}
+      EXPO_PUBLIC_WS_URL: ${{ vars.EXPO_PUBLIC_WS_URL || 'https://api-core.kinshield.click' }}
 
     steps:
-      - name: Check Expo settings
-        shell: bash
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          if [[ -z "$EXPO_TOKEN" || ! "$EXPO_PROJECT_ID" =~ ^[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}$ ]]; then
-            echo '::error::Set the EXPO_TOKEN secret and EXPO_PROJECT_ID variable. See .github/android-apk-preview.md.'
-            exit 1
-          fi
-
-      - name: Check out repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -40,47 +35,112 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Configure preview endpoints
-        if: vars.EXPO_PUBLIC_API_URL != '' || vars.EXPO_PUBLIC_WS_URL != ''
+      - name: Prebuild native Android project
+        run: npx expo prebuild --platform android --clean --non-interactive
+
+      - name: Build Android APK (arm64-v8a)
+        working-directory: android
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon
+
+      - name: Sign release APK (consistent keystore if configured) & compute SHA-256
+        id: prepare_apk
         shell: bash
         env:
-          EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL }}
-          EXPO_PUBLIC_WS_URL: ${{ vars.EXPO_PUBLIC_WS_URL }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          # Chỉ ghi đè URL đã đặt trên GitHub để máy build Expo vẫn nhận đủ giá trị mặc định.
-          jq --arg api "$EXPO_PUBLIC_API_URL" --arg ws "$EXPO_PUBLIC_WS_URL" \
-            '.build.preview.android.env += ({
-              EXPO_PUBLIC_API_URL: $api,
-              EXPO_PUBLIC_WS_URL: $ws
-            } | with_entries(select(.value != "")))' eas.json > "$RUNNER_TEMP/eas.json"
-          mv "$RUNNER_TEMP/eas.json" eas.json
+          apk_source="android/app/build/outputs/apk/release/app-release.apk"
+          if [[ ! -f "$apk_source" ]]; then
+            echo "::error::Không tìm thấy file APK tại $apk_source"
+            exit 1
+          fi
 
-      - name: Queue signed Android APK on EAS
+          out_apk="$RUNNER_TEMP/KinShield.apk"
+          cp "$apk_source" "$out_apk"
+
+          if [[ -n "$ANDROID_KEYSTORE_BASE64" && -n "$ANDROID_KEYSTORE_PASSWORD" && -n "$ANDROID_KEY_ALIAS" ]]; then
+            keystore_path="$RUNNER_TEMP/kinshield-release.jks"
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$keystore_path"
+
+            build_tools_dir="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -n 1)"
+            aligned_apk="$RUNNER_TEMP/KinShield-aligned.apk"
+            "$build_tools_dir/zipalign" -f -p 4 "$out_apk" "$aligned_apk"
+            "$build_tools_dir/apksigner" sign \
+              --ks "$keystore_path" \
+              --ks-key-alias "$ANDROID_KEY_ALIAS" \
+              --ks-pass "pass:$ANDROID_KEYSTORE_PASSWORD" \
+              --key-pass "pass:${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}" \
+              --v2-signing-enabled true \
+              --v3-signing-enabled true \
+              --out "$out_apk" \
+              "$aligned_apk"
+            "$build_tools_dir/apksigner" verify --verbose "$out_apk"
+            rm -f "$keystore_path" "$aligned_apk"
+            echo "signing_mode=Release Keystore (V2/V3 verified)" >> "$GITHUB_OUTPUT"
+          else
+            echo "signing_mode=Preview Debug Key (cấu hình 4 GitHub Secrets ANDROID_KEYSTORE_* để ký cố định)" >> "$GITHUB_OUTPUT"
+          fi
+
+          sha256sum "$out_apk" | awk '{print $1}' > "$RUNNER_TEMP/KinShield.apk.sha256"
+          apk_sha256="$(cat "$RUNNER_TEMP/KinShield.apk.sha256")"
+          echo "apk_sha256=$apk_sha256" >> "$GITHUB_OUTPUT"
+          ls -lh "$out_apk"
+
+      - name: Publish APK to GitHub Releases (preview-latest)
         shell: bash
         env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npx --yes "eas-cli@$EAS_CLI_VERSION" project:init \
-            --id "$EXPO_PROJECT_ID" --non-interactive --no-icon
+          tag="preview-latest"
+          apk_file="$RUNNER_TEMP/KinShield.apk"
+          sha_file="$RUNNER_TEMP/KinShield.apk.sha256"
+          short_sha="${GITHUB_SHA:0:12}"
+          notes=$(printf 'Bản cài đặt Android **KinShield** tự động build từ nhánh `main`.\n\n- **Tên ứng dụng:** `KinShield` (`click.kinshield.mobile`)\n- **Commit:** `%s`\n- **Chữ ký APK:** %s\n- **SHA-256:** `%s`\n- **API URL:** `%s`\n- **Kiến trúc:** `arm64-v8a` (điện thoại Android thật)\n\nTải file `KinShield.apk` bên dưới để cài đặt.' "$short_sha" "${{ steps.prepare_apk.outputs.signing_mode }}" "${{ steps.prepare_apk.outputs.apk_sha256 }}" "$EXPO_PUBLIC_API_URL")
 
-          # Dùng khóa ký đã lưu trên Expo để các bản APK có thể cập nhật lên nhau.
-          npx --yes "eas-cli@$EAS_CLI_VERSION" build \
-            --platform android --profile preview --freeze-credentials \
-            --message "main @ ${GITHUB_SHA:0:12}" \
-            --non-interactive --no-wait --json > "$RUNNER_TEMP/android-apk-build.json"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" "$apk_file" "$sha_file" --clobber
+            gh release edit "$tag" --target "$GITHUB_SHA" --title "KinShield Android (APK)" --notes "$notes"
+          else
+            gh release create "$tag" "$apk_file" "$sha_file" \
+              --target "$GITHUB_SHA" \
+              --title "KinShield Android (APK)" \
+              --prerelease \
+              --notes "$notes"
+          fi
 
-      - name: Link to EAS Build
+      - name: Upload APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KinShield-android-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/KinShield.apk
+            ${{ runner.temp }}/KinShield.apk.sha256
+          retention-days: 14
+
+      - name: Write APK download summary
         shell: bash
         run: |
-          build_url=$(jq -er '
-            .[] | select(.platform == "ANDROID" and .buildProfile == "preview")
-            | "https://expo.dev/accounts/\(.app.ownerAccount.name | @uri)/projects/\(.app.slug | @uri)/builds/\(.id | @uri)"
-          ' "$RUNNER_TEMP/android-apk-build.json")
+          download_url="https://github.com/${GITHUB_REPOSITORY}/releases/download/preview-latest/KinShield.apk"
+          release_url="https://github.com/${GITHUB_REPOSITORY}/releases/tag/preview-latest"
           {
-            printf '## KinShield Mobile · APK preview\n\n'
-            printf 'Đã gửi commit `%s` tới EAS Build.\n\n' "$GITHUB_SHA"
-            printf '[Theo dõi build và tải APK khi hoàn tất](%s)\n' "$build_url"
+            printf -- '## KinShield · Android APK Release\n\n'
+            printf -- '- **Commit:** `%s`\n' "${GITHUB_SHA:0:12}"
+            printf -- '- **Chữ ký:** %s\n' "${{ steps.prepare_apk.outputs.signing_mode }}"
+            printf -- '- **SHA-256:** `%s`\n' "${{ steps.prepare_apk.outputs.apk_sha256 }}"
+            printf -- '- **Tải trực tiếp `.apk`:** [KinShield.apk](%s)\n' "$download_url"
+            printf -- '- **Trang GitHub Release:** [preview-latest](%s)\n' "$release_url"
           } >> "$GITHUB_STEP_SUMMARY"
