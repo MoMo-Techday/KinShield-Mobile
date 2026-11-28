@@ -1,14 +1,14 @@
 # Bản cài đặt Android cho KinShield (GitHub Actions + GitHub Releases)
 
-Mỗi lần có commit mới trên `main` (hoặc bấm **Run workflow** trên `main`), workflow **Android APK preview** tự biên dịch file `KinShield.apk` (`arm64-v8a`) trực tiếp trên GitHub Actions bằng Gradle — **không tốn quota EAS** và **không cần `EXPO_TOKEN`**.
+Mỗi lần có commit mới trên `main` (hoặc bấm **Run workflow** trên `main`), workflow **Android APK Release** tự biên dịch file `KinShield.apk` (`arm64-v8a`) trực tiếp trên GitHub Actions bằng Gradle và **tạo 1 GitHub Release mới riêng biệt** theo dạng `v<version>-build.<run_number>` (đánh dấu `Latest`, lưu đầy đủ lịch sử các bản build).
 
 ## Tải file `.apk`
 
-- **Link cố định mới nhất:**
-  `https://github.com/MoMo-Techday/KinShield-Mobile/releases/download/preview-latest/KinShield.apk`
-- **Checksum SHA-256:**
-  `https://github.com/MoMo-Techday/KinShield-Mobile/releases/download/preview-latest/KinShield.apk.sha256`
-- **Trang Release:** `GitHub → Releases → preview-latest`
+- **Link cố định luôn tải bản mới nhất:**
+  `https://github.com/MoMo-Techday/KinShield-Mobile/releases/latest/download/KinShield.apk`
+- **Checksum SHA-256 bản mới nhất:**
+  `https://github.com/MoMo-Techday/KinShield-Mobile/releases/latest/download/KinShield.apk.sha256`
+- **Lịch sử tất cả các bản build:** `GitHub → Releases`
 
 ## Ký phát hành cố định (Release Keystore) để tránh lỗi cập nhật & giảm cảnh báo Play Protect
 
