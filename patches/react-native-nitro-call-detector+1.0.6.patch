@@ -1,3 +1,16 @@
+diff --git a/node_modules/react-native-nitro-call-detector/android/CMakeLists.txt b/node_modules/react-native-nitro-call-detector/android/CMakeLists.txt
+index 3943b42..aa09f2e 100644
+--- a/node_modules/react-native-nitro-call-detector/android/CMakeLists.txt
++++ b/node_modules/react-native-nitro-call-detector/android/CMakeLists.txt
+@@ -12,7 +12,7 @@ add_library(${PACKAGE_NAME} SHARED src/main/cpp/cpp-adapter.cpp)
+ # Note: the file on disk is lowercase (nitrogen generates it that way from
+ # the module name), but the library it wires up is `NitroCallDetector`
+ # (matching `androidCxxLibName` in nitro.json).
+-include(${CMAKE_SOURCE_DIR}/../nitrogen/generated/android/nitrocalldetector+autolinking.cmake)
++include(${CMAKE_SOURCE_DIR}/../nitrogen/generated/android/NitroCallDetector+autolinking.cmake)
+ 
+ # Set up local includes
+ include_directories("src/main/cpp" "../cpp")
 diff --git a/node_modules/react-native-nitro-call-detector/android/build.gradle b/node_modules/react-native-nitro-call-detector/android/build.gradle
 index 6b685d1..1e9b2f6 100644
 --- a/node_modules/react-native-nitro-call-detector/android/build.gradle
@@ -10,4 +23,15 @@ index 6b685d1..1e9b2f6 100644
 +apply from: '../nitrogen/generated/android/NitroCallDetector+autolinking.gradle'
  
  apply plugin: "com.facebook.react"
+ 
+diff --git a/node_modules/react-native-nitro-call-detector/android/src/main/cpp/cpp-adapter.cpp b/node_modules/react-native-nitro-call-detector/android/src/main/cpp/cpp-adapter.cpp
+index 0cb90a7..2acdbfa 100644
+--- a/node_modules/react-native-nitro-call-detector/android/src/main/cpp/cpp-adapter.cpp
++++ b/node_modules/react-native-nitro-call-detector/android/src/main/cpp/cpp-adapter.cpp
+@@ -1,5 +1,5 @@
+ #include <jni.h>
+-#include "nitrocalldetectorOnLoad.hpp"
++#include "NitroCallDetectorOnLoad.hpp"
+ 
+ #include <fbjni/fbjni.h>
  
