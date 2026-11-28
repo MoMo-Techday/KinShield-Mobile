@@ -1,0 +1,13 @@
+diff --git a/node_modules/react-native-nitro-call-detector/android/build.gradle b/node_modules/react-native-nitro-call-detector/android/build.gradle
+index 6b685d1..1e9b2f6 100644
+--- a/node_modules/react-native-nitro-call-detector/android/build.gradle
++++ b/node_modules/react-native-nitro-call-detector/android/build.gradle
+@@ -31,7 +31,7 @@ if (project.extensions.findByName("kotlin") == null) {
+   apply plugin: "kotlin-android"
+ }
+ 
+-apply from: '../nitrogen/generated/android/nitrocalldetector+autolinking.gradle'
++apply from: '../nitrogen/generated/android/NitroCallDetector+autolinking.gradle'
+ 
+ apply plugin: "com.facebook.react"
+ 
