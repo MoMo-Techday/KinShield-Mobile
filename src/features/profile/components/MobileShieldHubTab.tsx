@@ -18,6 +18,7 @@ import type {
     EmergencyContact,
     SafetyPreferences,
 } from '@/features/profile/types/profile-extras';
+import { ChatGuardControlCard } from '@/features/xray/components/ChatGuardControlCard';
 import { toast } from '@/lib/toast';
 
 interface MobileShieldHubTabProps {
@@ -147,6 +148,9 @@ export function MobileShieldHubTab({
                     </View>
                 </CardContent>
             </Card>
+
+            {/* Android Live Chat Guard (Zalo/SMS NotificationListener + Floating Shield) */}
+            <ChatGuardControlCard />
 
             {/* Layer 2 & 3 Protection Switches (Synced with Core) */}
             <Card className="gap-0 rounded-2xl border-border bg-card py-0">

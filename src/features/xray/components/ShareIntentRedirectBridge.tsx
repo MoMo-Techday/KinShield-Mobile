@@ -1,7 +1,9 @@
-// Tự điều hướng sang màn hình /xray khi người dùng bấm Chia sẻ ảnh/tin nhắn từ Zalo sang KinShield.
+// Tự điều hướng sang /xray khi nhận Share từ Zalo hoặc cảnh báo tin nhắn từ Chat Guard Android.
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'expo-router';
 import { useShareIntentContext } from 'expo-share-intent';
+import { subscribeChatGuardAlerts } from '@/features/xray/native/chat-guard-bridge';
+import { toast } from '@/lib/toast';
 
 export function ShareIntentRedirectBridge() {
     const router = useRouter();
@@ -13,6 +15,13 @@ export function ShareIntentRedirectBridge() {
             router.push('/xray');
         }
     }, [hasShareIntent, pathname, router]);
+
+    useEffect(() => {
+        return subscribeChatGuardAlerts((alert) => {
+            const detail = alert.reasons[0] ?? 'Phát hiện dấu hiệu lừa đảo';
+            toast.error(`Cảnh báo ${alert.appName}: ${detail}`);
+        });
+    }, []);
 
     return null;
 }

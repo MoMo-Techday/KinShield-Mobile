@@ -1,5 +1,5 @@
-// Màn hình Soi 1 chạm X-Ray (Lớp 1): chọn/chụp ảnh bill, quét mã QR, nhận chia sẻ từ Zalo hoặc dán tin nhắn.
-import { useEffect, useMemo, useState } from 'react';
+// Màn hình Soi 1 chạm X-Ray (Lớp 1): chọn/chụp ảnh bill, quét mã QR, nhận chia sẻ từ Zalo, chụp nhanh từ Khiên nổi & tiến độ 2 tầng.
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Image,
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useShareIntentContext } from 'expo-share-intent';
 import { useColorScheme } from 'nativewind';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,12 @@ import {
     readSharedImageAsBase64,
     type AllowedXRayImageMime,
 } from '@/features/xray/utils/image-helpers';
+import {
+    computeTier2Progress,
+    getMobileTier2Steps,
+    runMobileTier1Preview,
+    type InstantTier1Preview,
+} from '@/features/xray/utils/tier1-preview';
 import { parseMobileVietQr } from '@/features/xray/utils/vietqr';
 import { getApiErrorMessage } from '@/lib/api/api-error';
 import { THEME } from '@/lib/theme';
@@ -44,6 +50,13 @@ interface AttachedImage {
 
 export function XRayScannerScreen() {
     const router = useRouter();
+    const params = useLocalSearchParams<{
+        text?: string;
+        source?: string;
+        sender?: string;
+        capturePath?: string;
+        autoScan?: string;
+    }>();
     const { colorScheme } = useColorScheme();
     const { hasShareIntent, shareIntent, resetShareIntent } =
         useShareIntentContext();
@@ -56,9 +69,117 @@ export function XRayScannerScreen() {
     const [sourceNotice, setSourceNotice] = useState<string | null>(null);
     const [pickerError, setPickerError] = useState<string | null>(null);
     const [qrModalVisible, setQrModalVisible] = useState(false);
+    const [tier1Preview, setTier1Preview] =
+        useState<InstantTier1Preview | null>(null);
+    const [elapsedMs, setElapsedMs] = useState(0);
+    const lastParamKeyRef = useRef<string | null>(null);
 
     const analyzeMutation = useAnalyzeXRay();
     const resetMutation = analyzeMutation.reset;
+    const mutateAnalyze = analyzeMutation.mutate;
+
+    useEffect(() => {
+        if (!analyzeMutation.isPending) return;
+        const startedAt = Date.now();
+        const timer = setInterval(() => {
+            setElapsedMs(Date.now() - startedAt);
+        }, 200);
+        return () => clearInterval(timer);
+    }, [analyzeMutation.isPending]);
+
+    // Tự nạp ảnh chụp màn hình từ Nút Khiên nổi hoặc tin nhắn từ cảnh báo Zalo/SMS và tự động soi ngay.
+    useEffect(() => {
+        const paramText = typeof params.text === 'string' ? params.text : '';
+        const paramCapture =
+            typeof params.capturePath === 'string' ? params.capturePath : '';
+        const paramSource =
+            typeof params.source === 'string' ? params.source : '';
+        const paramSender =
+            typeof params.sender === 'string' ? params.sender : '';
+        const autoScan = params.autoScan === '1';
+
+        if (!paramText && !paramCapture) return;
+        const paramKey = `${paramSource}|${paramSender}|${paramText}|${paramCapture}`;
+        if (lastParamKeyRef.current === paramKey) return;
+        lastParamKeyRef.current = paramKey;
+
+        let cancelled = false;
+        const consumeDeepLink = async () => {
+            if (paramCapture) {
+                const base64 = await readSharedImageAsBase64(paramCapture);
+                if (cancelled || !base64) return;
+                const uri =
+                    paramCapture.startsWith('file://') ||
+                    paramCapture.startsWith('content://')
+                        ? paramCapture
+                        : `file://${paramCapture}`;
+                setAttachedImage({
+                    uri,
+                    base64,
+                    mime: 'image/jpeg',
+                    label: paramSource || 'Ảnh chụp nhanh từ Khiên nổi',
+                });
+                setText('');
+                setUrl('');
+                setSourceNotice('Đã chụp nhanh màn hình từ Nút Khiên nổi.');
+                resetMutation();
+                if (autoScan) {
+                    setTier1Preview(
+                        runMobileTier1Preview({
+                            text: '',
+                            url: '',
+                            hasImage: true,
+                        }),
+                    );
+                    setElapsedMs(0);
+                    mutateAnalyze({
+                        imageBase64: base64,
+                        imageMime: 'image/jpeg',
+                    });
+                }
+                return;
+            }
+
+            if (paramText) {
+                setText(paramText);
+                setUrl('');
+                setAttachedImage(null);
+                const senderLabel = paramSender ? ` (${paramSender})` : '';
+                setSourceNotice(
+                    `Đã nhận cảnh báo từ ${paramSource || 'ứng dụng chat'}${senderLabel}.`,
+                );
+                resetMutation();
+                if (autoScan) {
+                    setTier1Preview(
+                        runMobileTier1Preview({
+                            text: paramText,
+                            url: '',
+                            hasImage: false,
+                        }),
+                    );
+                    setElapsedMs(0);
+                    const qr = parseMobileVietQr(paramText);
+                    mutateAnalyze({
+                        text: paramText.trim(),
+                        vietQrPayload: qr ? paramText.trim() : undefined,
+                    });
+                }
+            }
+        };
+
+        void consumeDeepLink();
+        return () => {
+            cancelled = true;
+        };
+    }, [
+        mutateAnalyze,
+        params.autoScan,
+        params.capturePath,
+        params.sender,
+        params.source,
+        params.text,
+        resetMutation,
+    ]);
 
     // Tự nạp ảnh / tin nhắn / link khi người dùng chia sẻ trực tiếp từ Zalo sang KinShield.
     useEffect(() => {
@@ -191,6 +312,14 @@ export function XRayScannerScreen() {
 
     const handleAnalyze = () => {
         if (!canSubmit) return;
+        setTier1Preview(
+            runMobileTier1Preview({
+                text: text.trim(),
+                url: url.trim(),
+                hasImage: attachedImage !== null,
+            }),
+        );
+        setElapsedMs(0);
         analyzeMutation.mutate({
             text: text.trim() || undefined,
             url: url.trim() || undefined,
@@ -206,8 +335,13 @@ export function XRayScannerScreen() {
         setAttachedImage(null);
         setSourceNotice(null);
         setPickerError(null);
+        setTier1Preview(null);
+        setElapsedMs(0);
         analyzeMutation.reset();
     };
+
+    const tier2Progress = computeTier2Progress(elapsedMs);
+    const tier2Steps = getMobileTier2Steps(attachedImage !== null);
 
     return (
         <SafeAreaView className="flex-1 bg-background" edges={['bottom']}>
@@ -428,7 +562,111 @@ export function XRayScannerScreen() {
                         </CardContent>
                     </Card>
 
-                    {analyzeMutation.data && (
+                    {analyzeMutation.isPending && (
+                        <Card className="gap-0 rounded-2xl border-border bg-card py-0">
+                            <CardContent className="gap-4 px-5 py-5">
+                                {tier1Preview && (
+                                    <View
+                                        className={`gap-1.5 rounded-xl border p-3.5 ${
+                                            tier1Preview.hasHotRisk
+                                                ? 'border-amber-500/40 bg-amber-500/10'
+                                                : 'border-emerald-500/35 bg-emerald-500/10'
+                                        }`}
+                                    >
+                                        <View className="flex-row items-center justify-between gap-2">
+                                            <Text className="text-xs font-extrabold uppercase tracking-wide text-foreground">
+                                                Tầng 1 • Kiểm tra nhanh
+                                            </Text>
+                                            <Text
+                                                className={`text-[11px] font-bold ${
+                                                    tier1Preview.hasHotRisk
+                                                        ? 'text-amber-700 dark:text-amber-300'
+                                                        : 'text-emerald-700 dark:text-emerald-300'
+                                                }`}
+                                            >
+                                                {tier1Preview.hasHotRisk
+                                                    ? 'Có dấu hiệu nóng'
+                                                    : 'Xong · < 50ms'}
+                                            </Text>
+                                        </View>
+                                        <Text className="text-sm font-medium text-foreground">
+                                            {tier1Preview.summary}
+                                        </Text>
+                                        {tier1Preview.flags.map((flag) => (
+                                            <Text
+                                                key={flag}
+                                                className="text-xs text-muted-foreground"
+                                            >
+                                                • {flag}
+                                            </Text>
+                                        ))}
+                                    </View>
+                                )}
+
+                                <View className="gap-3 rounded-xl border border-border bg-secondary/35 p-4">
+                                    <View className="flex-row items-center justify-between gap-2">
+                                        <View className="flex-row items-center gap-2">
+                                            <ActivityIndicator
+                                                size="small"
+                                                color={
+                                                    THEME[colorScheme ?? 'light']
+                                                        .primary
+                                                }
+                                            />
+                                            <Text className="text-sm font-bold text-foreground">
+                                                Tầng 2 • AI đang soi chuyên sâu
+                                            </Text>
+                                        </View>
+                                        <Text className="text-xs font-bold text-muted-foreground">
+                                            {(elapsedMs / 1000).toFixed(1)}s ·{' '}
+                                            {tier2Progress.percent}%
+                                        </Text>
+                                    </View>
+
+                                    <View className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                                        <View
+                                            className="h-full rounded-full bg-primary"
+                                            style={{
+                                                width: `${tier2Progress.percent}%`,
+                                            }}
+                                        />
+                                    </View>
+
+                                    <View className="gap-1.5">
+                                        {tier2Steps.map((step, index) => {
+                                            const done =
+                                                index <
+                                                tier2Progress.activeStepIndex;
+                                            const active =
+                                                index ===
+                                                tier2Progress.activeStepIndex;
+                                            return (
+                                                <Text
+                                                    key={step}
+                                                    className={`text-xs ${
+                                                        active
+                                                            ? 'font-bold text-foreground'
+                                                            : done
+                                                              ? 'font-semibold text-emerald-700 dark:text-emerald-300'
+                                                              : 'text-muted-foreground'
+                                                    }`}
+                                                >
+                                                    {done
+                                                        ? '✓ '
+                                                        : active
+                                                          ? '• '
+                                                          : '○ '}
+                                                    {step}
+                                                </Text>
+                                            );
+                                        })}
+                                    </View>
+                                </View>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {!analyzeMutation.isPending && analyzeMutation.data && (
                         <XRayResultCard
                             result={analyzeMutation.data}
                             onOpenFamily={() => router.push('/family')}
