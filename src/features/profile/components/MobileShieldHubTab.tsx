@@ -141,7 +141,7 @@ export function MobileShieldHubTab({
                             onPress={onOpenFamily}
                         >
                             <Text className="font-bold text-foreground">
-                                Mở Gia đình &amp; Đồng duyệt
+                                Mở Gia đình, Cuộc gọi &amp; Đồng duyệt
                             </Text>
                         </Button>
                     </View>

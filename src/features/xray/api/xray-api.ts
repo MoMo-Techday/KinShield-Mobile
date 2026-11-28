@@ -8,7 +8,9 @@ import type {
 export const xrayApi = {
     async analyze(payload: XRayAnalyzeRequest): Promise<XRayAnalysisResult> {
         return (
-            await apiClient.post<XRayAnalysisResult>('/xray/analyze', payload)
+            await apiClient.post<XRayAnalysisResult>('/xray/analyze', payload, {
+                timeout: 45_000,
+            })
         ).data;
     },
 };

@@ -45,8 +45,10 @@ const LEVEL_STYLES: Record<
     },
 };
 
+const VND_FORMATTER = new Intl.NumberFormat('vi-VN');
+
 function formatVnd(amount: number): string {
-    return `${new Intl.NumberFormat('vi-VN').format(amount)}₫`;
+    return `${VND_FORMATTER.format(amount)}₫`;
 }
 
 export function XRayResultCard({ result, onOpenFamily }: XRayResultCardProps) {
@@ -55,7 +57,7 @@ export function XRayResultCard({ result, onOpenFamily }: XRayResultCardProps) {
     const isRisky = result.riskScore >= 50;
 
     return (
-        <Card className="gap-0 rounded-[28px] border-border bg-card py-0 shadow-xl shadow-primary/[0.06]">
+        <Card className="gap-0 rounded-2xl border-border bg-card py-0">
             <CardHeader className="gap-3 px-6 pt-6">
                 <View
                     className={`flex-row items-center justify-between rounded-2xl border px-4 py-3 ${style.bannerClass}`}
