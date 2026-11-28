@@ -42,6 +42,7 @@ function ProfileHub({ user }: { user: AuthUser }) {
     const logoutMutation = useLogout();
     const {
         extras,
+        syncStatus,
         setCustomAvatarUri,
         selectAvatarPreset,
         clearAvatar,
@@ -119,6 +120,15 @@ function ProfileHub({ user }: { user: AuthUser }) {
                                 <Text className="text-center text-xs text-muted-foreground">
                                     {user.email}
                                 </Text>
+                                <View className="mt-1 rounded-full border border-border bg-secondary/60 px-3 py-0.5">
+                                    <Text className="text-[11px] font-bold text-muted-foreground">
+                                        {syncStatus === 'synced'
+                                            ? 'Đã đồng bộ đám mây'
+                                            : syncStatus === 'syncing'
+                                              ? 'Đang đồng bộ...'
+                                              : 'Lưu trên máy'}
+                                    </Text>
+                                </View>
                             </View>
 
                             {extras.safetyNote.length > 0 && (
