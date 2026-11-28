@@ -1,13 +1,8 @@
-// Thẻ kết quả X-Ray chữ lớn, tương phản cao và dễ hiểu cho cha mẹ.
-import { View } from 'react-native';
+// Thẻ kết quả X-Ray gọn gàng, ít chữ, tập trung vào mức cảnh báo cho cha mẹ.
+import { useState } from 'react';
+import { Pressable, View } from 'react-native';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
 import type {
     XRayAnalysisResult,
@@ -21,27 +16,31 @@ interface XRayResultCardProps {
 
 const LEVEL_STYLES: Record<
     XRayRiskLevel,
-    { label: string; bannerClass: string; textClass: string }
+    { label: string; badgeClass: string; textClass: string; borderClass: string }
 > = {
     SAFE: {
         label: 'AN TOÀN',
-        bannerClass: 'border-emerald-500/30 bg-emerald-500/10',
+        badgeClass: 'bg-emerald-500/12',
         textClass: 'text-emerald-700 dark:text-emerald-300',
+        borderClass: 'border-emerald-500/35',
     },
     WARN: {
         label: 'CẢNH BÁO',
-        bannerClass: 'border-amber-500/35 bg-amber-500/10',
+        badgeClass: 'bg-amber-500/12',
         textClass: 'text-amber-700 dark:text-amber-300',
+        borderClass: 'border-amber-500/40',
     },
     BLOCK: {
         label: 'NGUY HIỂM',
-        bannerClass: 'border-destructive/40 bg-destructive/10',
+        badgeClass: 'bg-destructive/12',
         textClass: 'text-destructive',
+        borderClass: 'border-destructive/45',
     },
     LOCKDOWN: {
-        label: 'KHÓA KHẨN CẤP',
-        bannerClass: 'border-destructive bg-destructive/15',
+        label: 'NGUY HIỂM CAO',
+        badgeClass: 'bg-destructive/15',
         textClass: 'text-destructive',
+        borderClass: 'border-destructive',
     },
 };
 
@@ -52,106 +51,58 @@ function formatVnd(amount: number): string {
 }
 
 export function XRayResultCard({ result, onOpenFamily }: XRayResultCardProps) {
+    const [showDetails, setShowDetails] = useState(false);
     const style = LEVEL_STYLES[result.level];
     const vietQr = result.tier1Signals.vietQr;
     const isRisky = result.riskScore >= 50;
+    const topActions = result.recommendedActions.slice(0, 2);
 
     return (
-        <Card className="gap-0 rounded-2xl border-border bg-card py-0">
-            <CardHeader className="gap-3 px-6 pt-6">
+        <Card className={`gap-0 rounded-2xl border bg-card py-0 ${style.borderClass}`}>
+            <CardContent className="gap-4 px-5 py-5">
                 <View
-                    className={`flex-row items-center justify-between rounded-2xl border px-4 py-3 ${style.bannerClass}`}
+                    className={`flex-row items-center justify-between rounded-xl px-4 py-2.5 ${style.badgeClass}`}
                 >
-                    <Text className={`text-sm font-extrabold ${style.textClass}`}>
+                    <Text className={`text-sm font-extrabold tracking-wide ${style.textClass}`}>
                         {style.label}
                     </Text>
-                    <Text className={`text-lg font-extrabold ${style.textClass}`}>
+                    <Text className={`text-base font-extrabold ${style.textClass}`}>
                         {result.riskScore}/100
                     </Text>
                 </View>
 
-                <CardTitle className="text-xl font-bold leading-snug text-foreground">
-                    {result.verdict}
-                </CardTitle>
-                <CardDescription className="text-sm text-muted-foreground">
-                    Phân loại: {result.scamCategory}
-                </CardDescription>
-            </CardHeader>
-
-            <CardContent className="gap-5 px-6 pb-7 pt-4">
-                <View className="gap-1.5 rounded-2xl border border-primary/20 bg-primary/5 p-4">
-                    <Text className="text-xs font-extrabold uppercase tracking-wider text-primary">
-                        Lời khuyên cho ba mẹ
+                <View className="gap-2">
+                    <Text className="text-lg font-bold leading-snug text-foreground">
+                        {result.verdict}
                     </Text>
-                    <Text className="text-base font-semibold leading-6 text-foreground">
+                    <Text className="text-sm leading-6 text-muted-foreground">
                         {result.elderlyVoiceScript}
                     </Text>
                 </View>
 
                 {vietQr && (
-                    <View className="gap-1.5 rounded-2xl border border-border bg-secondary/40 p-4">
-                        <Text className="text-xs font-extrabold uppercase tracking-wider text-primary">
-                            Thông tin giải mã VietQR
+                    <View className="gap-1 rounded-xl border border-border bg-secondary/40 px-3.5 py-2.5">
+                        <Text className="text-xs font-bold text-foreground">
+                            VietQR: {vietQr.bankName} • {vietQr.accountNumber}
+                            {vietQr.amountVnd !== null ? ` • ${formatVnd(vietQr.amountVnd)}` : ''}
                         </Text>
-                        <Text className="text-sm font-bold text-foreground">
-                            {vietQr.bankName} • STK {vietQr.accountNumber}
-                        </Text>
-                        {vietQr.amountVnd !== null && (
-                            <Text className="text-sm font-semibold text-foreground">
-                                Số tiền: {formatVnd(vietQr.amountVnd)}
-                            </Text>
-                        )}
-                        {vietQr.purpose.length > 0 && (
-                            <Text className="text-xs text-muted-foreground">
-                                Nội dung: {vietQr.purpose}
-                            </Text>
-                        )}
                         {vietQr.crcValid === false && (
                             <Text className="text-xs font-bold text-destructive">
-                                Cảnh báo: Mã toàn vẹn CRC-16 không hợp lệ!
+                                Mã CRC-16 không hợp lệ — nghi QR giả mạo.
                             </Text>
                         )}
                     </View>
                 )}
 
-                {result.recommendedActions.length > 0 && (
-                    <View className="gap-2">
-                        <Text className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
-                            Nên làm ngay
-                        </Text>
-                        {result.recommendedActions.map((action, index) => (
+                {topActions.length > 0 && (
+                    <View className="gap-1.5 border-t border-border pt-3">
+                        {topActions.map((action, index) => (
                             <Text
                                 key={`${index}-${action}`}
                                 className="text-sm leading-5 text-foreground"
                             >
                                 • {action}
                             </Text>
-                        ))}
-                    </View>
-                )}
-
-                {result.findings.length > 0 && (
-                    <View className="gap-2 border-t border-border pt-4">
-                        <Text className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
-                            Chi tiết kiểm tra ({result.engine})
-                        </Text>
-                        {result.findings.map((finding, index) => (
-                            <View
-                                key={`${index}-${finding.agent}`}
-                                className="gap-0.5 rounded-xl border border-border bg-background/60 p-3"
-                            >
-                                <View className="flex-row items-center justify-between gap-2">
-                                    <Text className="flex-1 text-xs font-bold text-foreground">
-                                        {finding.agent}
-                                    </Text>
-                                    <Text className="text-xs font-extrabold text-primary">
-                                        {finding.status} • {finding.score}
-                                    </Text>
-                                </View>
-                                <Text className="text-xs leading-5 text-muted-foreground">
-                                    {finding.detail}
-                                </Text>
-                            </View>
                         ))}
                     </View>
                 )}
@@ -163,9 +114,48 @@ export function XRayResultCard({ result, onOpenFamily }: XRayResultCardProps) {
                         onPress={onOpenFamily}
                     >
                         <Text className="font-bold text-primary-foreground">
-                            Mở Gia đình &amp; Đồng duyệt với con
+                            Gọi xác minh / Đồng duyệt với con
                         </Text>
                     </Button>
+                )}
+
+                {result.findings.length > 0 && (
+                    <View className="border-t border-border pt-2">
+                        <Pressable
+                            onPress={() => setShowDetails((prev) => !prev)}
+                            className="py-1.5"
+                        >
+                            <Text className="text-xs font-semibold text-muted-foreground">
+                                {showDetails ? 'Ẩn chi tiết kỹ thuật' : 'Xem chi tiết kỹ thuật'}
+                            </Text>
+                        </Pressable>
+
+                        {showDetails && (
+                            <View className="mt-2 gap-2">
+                                <Text className="text-xs text-muted-foreground">
+                                    {result.scamCategory} · {result.engine}
+                                </Text>
+                                {result.findings.map((finding, index) => (
+                                    <View
+                                        key={`${index}-${finding.agent}`}
+                                        className="gap-0.5 rounded-xl border border-border bg-background/60 p-3"
+                                    >
+                                        <View className="flex-row items-center justify-between gap-2">
+                                            <Text className="flex-1 text-xs font-bold text-foreground">
+                                                {finding.agent}
+                                            </Text>
+                                            <Text className="text-xs font-bold text-primary">
+                                                {finding.score}/100
+                                            </Text>
+                                        </View>
+                                        <Text className="text-xs leading-5 text-muted-foreground">
+                                            {finding.detail}
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+                    </View>
                 )}
             </CardContent>
         </Card>
