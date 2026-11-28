@@ -11,10 +11,11 @@
     "scheme": "kinshield",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "click.kinshield.mobile",
       "supportsTablet": false,
       "icon": "./assets/expo.icon",
       "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Cho phép KinShield sử dụng nhận dạng giọng nói khi bạn chủ động bật theo dõi cuộc gọi.",
+        "NSMicrophoneUsageDescription": "KinShield cần quyền micro để nhận dạng lời nói khi bạn chủ động bật bảo vệ cuộc gọi. Âm thanh có thể được dịch vụ nhận dạng của thiết bị xử lý; KinShield chỉ nhận văn bản đã che thông tin nhạy cảm.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -24,6 +25,10 @@
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
+      "permissions": [
+        "android.permission.READ_PHONE_STATE",
+        "android.permission.RECORD_AUDIO"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -75,6 +80,24 @@
             "text/*",
             "image/*"
           ]
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "KinShield cần quyền micro để nhận dạng lời nói khi bạn chủ động bật bảo vệ cuộc gọi. Âm thanh có thể được dịch vụ nhận dạng của thiết bị xử lý; KinShield chỉ nhận văn bản đã che thông tin nhạy cảm.",
+          "speechRecognitionPermission": "Cho phép KinShield sử dụng nhận dạng giọng nói khi bạn chủ động bật theo dõi cuộc gọi.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "KinShield cần quyền micro để nhận dạng lời nói khi bạn chủ động bật bảo vệ cuộc gọi. Âm thanh có thể được dịch vụ nhận dạng của thiết bị xử lý; KinShield chỉ nhận văn bản đã che thông tin nhạy cảm.",
+          "enableBackgroundRecording": false,
+          "enableBackgroundPlayback": false
         }
       ]
     ],
