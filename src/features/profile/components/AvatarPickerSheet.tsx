@@ -91,17 +91,23 @@ export function AvatarPickerSheet({
 
     return (
         <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-            <SafeAreaView className="flex-1 bg-background">
-                <ScrollView contentContainerClassName="px-5 py-6">
-                    <View className="mx-auto w-full max-w-[460px] gap-6">
+            <SafeAreaView
+                edges={['top', 'bottom']}
+                className="flex-1 bg-background"
+            >
+                <ScrollView
+                    keyboardShouldPersistTaps="handled"
+                    contentContainerClassName="px-5 py-5 pb-10"
+                >
+                    <View className="mx-auto w-full max-w-[460px] gap-5">
                         <View className="flex-row items-center justify-between gap-3">
-                            <Text className="text-xl font-extrabold text-foreground">
+                            <Text className="text-xl font-bold text-foreground">
                                 Đổi ảnh đại diện
                             </Text>
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="rounded-full px-4"
+                                className="rounded-xl px-4"
                                 onPress={onClose}
                             >
                                 <Text className="font-bold text-foreground">
@@ -109,7 +115,7 @@ export function AvatarPickerSheet({
                                 </Text>
                             </Button>
                         </View>
-                        <View className="items-center gap-4 rounded-[28px] border border-border bg-card p-6">
+                        <View className="items-center gap-4 rounded-2xl border border-border bg-card p-5">
                             <MobileAvatarDisplay
                                 name={name}
                                 customUri={customUri}

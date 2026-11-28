@@ -16,7 +16,7 @@ interface MobileAvatarDisplayProps {
     customUri: string | null;
     presetId: AvatarPresetId | null;
     frame: AvatarFrameTone;
-    size?: 'md' | 'lg';
+    size?: 'sm' | 'md' | 'lg';
 }
 
 export function MobileAvatarDisplay({
@@ -32,13 +32,17 @@ export function MobileAvatarDisplay({
         ? AVATAR_PRESETS.find((p) => p.id === presetId) ?? null
         : null;
 
-    const boxClass = size === 'lg' ? 'size-24' : 'size-14';
-    const emojiClass = size === 'lg' ? 'text-4xl' : 'text-2xl';
-    const textClass = size === 'lg' ? 'text-2xl' : 'text-base';
+    const boxClass =
+        size === 'lg' ? 'size-20' : size === 'md' ? 'size-12' : 'size-9';
+    const borderWidthClass = size === 'sm' ? 'border-2' : 'border-[3px]';
+    const emojiClass =
+        size === 'lg' ? 'text-4xl' : size === 'md' ? 'text-2xl' : 'text-base';
+    const textClass =
+        size === 'lg' ? 'text-xl' : size === 'md' ? 'text-sm' : 'text-xs';
 
     return (
         <View
-            className={`${boxClass} items-center justify-center overflow-hidden rounded-full border-4 ${frameSpec.borderClass} ${
+            className={`${boxClass} items-center justify-center overflow-hidden rounded-full ${borderWidthClass} ${frameSpec.borderClass} ${
                 preset ? preset.bgClass : 'bg-primary/10'
             }`}
         >

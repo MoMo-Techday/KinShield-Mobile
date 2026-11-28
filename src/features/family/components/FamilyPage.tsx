@@ -1,23 +1,30 @@
 // Khung cuộn dùng chung để nội dung và nút vẫn tiếp cận được với màn nhỏ và cỡ chữ lớn.
 import type { PropsWithChildren } from 'react';
-import { ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { classifyFamilyError } from '@/features/co-sign/utils/co-sign-errors';
 
-// Giữ vùng an toàn phía dưới và để form cuộn thay vì cắt nhãn khi tăng cỡ chữ.
+// Giữ vùng an toàn phía dưới, đẩy nội dung lên khi mở bàn phím và để form cuộn mượt.
 export function FamilyPage({ children }: PropsWithChildren) {
     return (
         <SafeAreaView edges={['bottom']} className="flex-1 bg-background">
-            <ScrollView
-                keyboardShouldPersistTaps="handled"
-                contentContainerClassName="px-5 py-5"
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
+                className="flex-1"
             >
-                <View className="mx-auto w-full max-w-[540px] gap-4">
-                    {children}
-                </View>
-            </ScrollView>
+                <ScrollView
+                    keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="on-drag"
+                    contentContainerClassName="px-5 py-5 pb-10"
+                >
+                    <View className="mx-auto w-full max-w-[540px] gap-4">
+                        {children}
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }

@@ -314,9 +314,24 @@ export function useMobileProfileExtras(userId: string, displayName: string) {
             });
     }, [displayName, userId]);
 
+    const refreshFromServer = useCallback(async () => {
+        setSyncStatus('syncing');
+        try {
+            const serverExtras =
+                await mobileProfileExtrasApi.getExtras(displayName);
+            extrasRef.current = serverExtras;
+            setExtras(serverExtras);
+            await saveMobileProfileExtras(userId, serverExtras);
+            setSyncStatus('synced');
+        } catch {
+            setSyncStatus('offline');
+        }
+    }, [displayName, userId]);
+
     return {
         extras,
         syncStatus,
+        refreshFromServer,
         setCustomAvatarUri,
         selectAvatarPreset,
         clearAvatar,
