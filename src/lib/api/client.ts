@@ -44,7 +44,8 @@ function requiresAuthentication(config: InternalAxiosRequestConfig): boolean {
         (method === 'get' && path === 'auth/me') ||
         (method === 'post' && path === authEndpoint.changePassword.slice(1)) ||
         path === 'families' ||
-        path?.startsWith('families/') === true
+        path?.startsWith('families/') === true ||
+        path === 'profile/extras'
     );
 }
 

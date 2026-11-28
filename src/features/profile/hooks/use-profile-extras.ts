@@ -1,5 +1,6 @@
-// Hook quản lý thông tin phụ hồ sơ người dùng trên Mobile (ảnh đại diện, danh bạ khẩn cấp, cài đặt bảo vệ).
-import { useCallback, useEffect, useState } from 'react';
+// Hook quản lý thông tin phụ hồ sơ người dùng trên Mobile (đồng bộ KinShield-Core + cache offline trên máy).
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { mobileProfileExtrasApi } from '@/features/profile/api/profile-extras-api';
 import {
     loadMobileProfileExtras,
     saveMobileProfileExtras,
@@ -19,32 +20,86 @@ import type {
     UserProfileExtras,
 } from '@/features/profile/types/profile-extras';
 
+type ProfileSyncStatus = 'syncing' | 'synced' | 'offline';
+
 export function useMobileProfileExtras(userId: string, displayName: string) {
     const [extras, setExtras] = useState<UserProfileExtras>(() =>
         createDefaultUserProfileExtras(displayName),
     );
+    const [syncStatus, setSyncStatus] = useState<ProfileSyncStatus>('syncing');
 
+    const extrasRef = useRef<UserProfileExtras>(extras);
+    const hasLocalMutationRef = useRef(false);
+    const syncSeqRef = useRef(0);
+
+    // Tải cache trên máy ngay lập tức, sau đó đồng bộ hồ sơ từ KinShield-Core.
     useEffect(() => {
         let cancelled = false;
+        hasLocalMutationRef.current = false;
+
         void loadMobileProfileExtras(userId, displayName).then((loaded) => {
-            if (!cancelled) {
-                setExtras(loaded);
-            }
+            if (cancelled || hasLocalMutationRef.current) return;
+            extrasRef.current = loaded;
+            setExtras(loaded);
         });
+
+        void mobileProfileExtrasApi
+            .getExtras(displayName)
+            .then((serverExtras) => {
+                if (cancelled || hasLocalMutationRef.current) return;
+                extrasRef.current = serverExtras;
+                setExtras(serverExtras);
+                void saveMobileProfileExtras(userId, serverExtras);
+                setSyncStatus('synced');
+            })
+            .catch(() => {
+                if (cancelled || hasLocalMutationRef.current) return;
+                setSyncStatus('offline');
+            });
+
         return () => {
             cancelled = true;
         };
     }, [displayName, userId]);
 
+    const syncToBackend = useCallback(
+        (next: UserProfileExtras) => {
+            const seq = ++syncSeqRef.current;
+            setSyncStatus('syncing');
+
+            void mobileProfileExtrasApi
+                .updateExtras(next, displayName)
+                .then((saved) => {
+                    if (syncSeqRef.current !== seq) return;
+                    // Giữ lại ảnh file:// cục bộ nếu thiết bị không trả base64.
+                    const merged =
+                        !saved.avatarCustomUri &&
+                        next.avatarCustomUri?.startsWith('file://')
+                            ? { ...saved, avatarCustomUri: next.avatarCustomUri }
+                            : saved;
+                    extrasRef.current = merged;
+                    setExtras(merged);
+                    void saveMobileProfileExtras(userId, merged);
+                    setSyncStatus('synced');
+                })
+                .catch(() => {
+                    if (syncSeqRef.current !== seq) return;
+                    setSyncStatus('offline');
+                });
+        },
+        [displayName, userId],
+    );
+
     const commit = useCallback(
         (updater: (prev: UserProfileExtras) => UserProfileExtras) => {
-            setExtras((prev) => {
-                const next = updater(prev);
-                void saveMobileProfileExtras(userId, next);
-                return next;
-            });
+            hasLocalMutationRef.current = true;
+            const next = updater(extrasRef.current);
+            extrasRef.current = next;
+            setExtras(next);
+            void saveMobileProfileExtras(userId, next);
+            syncToBackend(next);
         },
-        [userId],
+        [syncToBackend, userId],
     );
 
     const setCustomAvatarUri = useCallback(
@@ -230,17 +285,38 @@ export function useMobileProfileExtras(userId: string, displayName: string) {
     );
 
     const resetExtras = useCallback(() => {
-        commit(() => ({
+        hasLocalMutationRef.current = true;
+        const next = {
             ...createDefaultUserProfileExtras(displayName),
             activityLog: appendActivityLog(
                 [],
                 'Khôi phục thiết lập hồ sơ mặc định',
             ),
-        }));
-    }, [commit, displayName]);
+        };
+        extrasRef.current = next;
+        setExtras(next);
+        void saveMobileProfileExtras(userId, next);
+
+        const seq = ++syncSeqRef.current;
+        setSyncStatus('syncing');
+        void mobileProfileExtrasApi
+            .resetExtras(displayName)
+            .then((serverDefault) => {
+                if (syncSeqRef.current !== seq) return;
+                extrasRef.current = serverDefault;
+                setExtras(serverDefault);
+                void saveMobileProfileExtras(userId, serverDefault);
+                setSyncStatus('synced');
+            })
+            .catch(() => {
+                if (syncSeqRef.current !== seq) return;
+                setSyncStatus('offline');
+            });
+    }, [displayName, userId]);
 
     return {
         extras,
+        syncStatus,
         setCustomAvatarUri,
         selectAvatarPreset,
         clearAvatar,
